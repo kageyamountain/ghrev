@@ -1,0 +1,25 @@
+name: ghrev
+
+services:
+  ghrev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: dev
+    environment:
+      ENV: dev
+      TZ: Asia/Tokyo
+      CGO_ENABLED: 1
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080" # アプリケーション用ポート
+      - "2345:2345" # delveリモートデバッグ用ポート
+    env_file:
+      - .env.dev
+    stdin_open: true
+    tty: true
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE

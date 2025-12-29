@@ -1,0 +1,93 @@
+version: "2"
+run:
+  timeout: 5m
+  tests: true
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+linters:
+  enable:
+    - bodyclose     # httpレスポンスのclose
+    - dupl          # 重複コード
+    - errcheck      # エラーハンドリング
+    - errorlint     # error型関連
+    - exhaustive    # 網羅性
+    - goconst       # 定数化
+    - gocritic      # 詳細なコード分析
+    - gocyclo       # サイクロマティック複雑度分析（循環的複雑度）
+    - gosec         # セキュリティチェック
+    - govet         # go vet相当
+    - ineffassign   # 無効な代入
+    - misspell      # スペルミス
+    - nestif        # ネストの深いif文
+    - noctx         # httpリクエストのcontext送信
+    - nolintlint    # nolintコメント
+    - paralleltest  # 並列テスト
+    - prealloc      # アロケーション
+    - protogetter   # gRPCのproto messageの直接アクセス
+    - revive        # golintの後継
+    - rowserrcheck  # database/sqlのRowsエラーチェック
+    - sqlclosecheck # sql.Rowsやsql.Stmtのclose
+    - staticcheck   # 静的解析
+    - thelper       # t.Helper()
+    - unconvert     # 不要な型変換
+    - unused        # 未使用コード
+    - whitespace    # if,for前後の不要な改行
+  disable:
+    - funlen        # 関数の行数
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    exhaustive:
+      default-signifies-exhaustive: true
+    gocritic:
+      enabled-tags:
+        - performance
+        - style
+        - experimental
+      disabled-checks:
+        - commentedOutCode
+    gocyclo:
+      min-complexity: 15
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # 可読性が低下するので無効化
+      settings:
+        shadow:
+          strict: true
+    revive:
+      rules:
+        - name: package-comments
+          disabled: true  # パッケージのコメント要求を無効化
+        - name: exported
+          disabled: true  # 関数名から始まるコメント要求を無効化
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: _test\.go # テストファイルでの無効化
+        linters:
+          - bodyclose
+          - dupl
+          - errcheck
+          - funlen
+          - goconst
+          - gosec
+          - noctx
+          - nolintlint
+formatters:
+  enable:
+    - gofumpt   # gofmtのスーパーセット
+    - goimports # import整理
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/kageyamountain/ghrev
+  exclusions:
+    generated: disable

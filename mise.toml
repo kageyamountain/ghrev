@@ -1,0 +1,4 @@
+[tools]
+act = "latest"
+go = "1.25.3"
+task = "latest"

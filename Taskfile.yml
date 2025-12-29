@@ -1,0 +1,72 @@
+version: '3'
+
+tasks:
+  # docker
+  compose-up:
+    desc: 開発用コンテナ起動
+    silent: true
+    cmds:
+      - docker compose up -d --build
+
+  compose-down:
+    desc: 開発用コンテナ停止
+    silent: true
+    cmds:
+      - docker compose down
+
+  # execute
+  #  example:
+  #   task exec -- --mode two-approve
+  exec:
+    desc: ghrev実行
+    silent: false
+    cmds:
+      - docker-compose exec -T ghrev go run ./cmd/ghrev/main.go {{.CLI_ARGS}}
+
+  # test
+  test:
+    desc: テスト実行（失敗テストのみ表示）
+    silent: true
+    cmds:
+      - docker-compose exec ghrev go test -cover -race ./...
+
+  test-display-all:
+    desc: テスト実行（全テスト結果表示）
+    silent: true
+    cmds:
+      - docker-compose exec ghrev go test -v -cover -race ./...
+
+  # lint
+  lint:
+    desc: lint実行
+    silent: true
+    cmds:
+      - docker-compose exec ghrev golangci-lint run
+
+  lint-fix:
+    desc: lint-fix実行
+    silent: true
+    cmds:
+      - docker-compose exec ghrev golangci-lint run --fix
+
+  # fmt
+  fmt:
+    desc: go fmt実行
+    silent: true
+    cmds:
+      - go fmt ./...
+
+  # app config
+  appconfig:
+    desc: .env.devのAppConfigマッピングを確認
+    silent: true
+    cmds:
+      - docker-compose exec ghrev go run ./cmd/dev/appconfig/main.go
+
+  # mock
+  mock-gen:
+    desc: moqを用いたmock生成
+    silent: true
+    cmds:
+      - find . -type f -name "*_mock.go" -exec rm -f {} +
+      - go generate -run="go tool moq" ./...
