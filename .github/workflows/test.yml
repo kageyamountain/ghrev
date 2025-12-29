@@ -1,0 +1,35 @@
+name: test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: リポジトリのチェックアウト
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Goのセットアップ
+        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        with:
+          go-version-file: ./go.mod
+          cache: true
+
+      - name: 依存関係のダウンロード
+        run: go mod download
+
+      - name: テスト実行
+        run: | # CI環境では環境変数"ENV=ci"を設定
+          if [ -n "$ACT" ]; then
+            go test -race ./...
+          else
+            env ENV=ci go test -race ./...
+          fi

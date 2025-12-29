@@ -1,0 +1,33 @@
+# IssueとPull Requestの作成時に作成者をassigneeに設定する
+name: auto-assign
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  auto-assign:
+    # botが作成したIssue/PRはスキップ
+    if: contains(github.actor, '[bot]') == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: issuesの作成者をassigneeに設定
+        if: github.event_name == 'issues'
+        run: gh issue edit ${{ github.event.issue.number }} --add-assignee ${{ github.actor }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: PRの作成者をassigneeに設定
+        if: github.event_name == 'pull_request'
+        run: gh pr edit ${{ github.event.number }} --add-assignee ${{ github.actor }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}

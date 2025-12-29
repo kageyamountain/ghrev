@@ -1,0 +1,55 @@
+version: 2
+updates:
+  # Go
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "21:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 7
+    reviewers:
+      - "kageyamountain"
+    assignees:
+      - "kageyamountain"
+    labels:
+      - "dependencies"
+
+  # Docker
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "21:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 7
+    reviewers:
+      - "kageyamountain"
+    assignees:
+      - "kageyamountain"
+    labels:
+      - "dependencies"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "friday"
+      time: "21:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 20
+    cooldown:
+      default-days: 7
+    reviewers:
+      - "kageyamountain"
+    assignees:
+      - "kageyamountain"
+    labels:
+      - "dependencies"
