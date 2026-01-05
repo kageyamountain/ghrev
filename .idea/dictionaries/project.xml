@@ -2,6 +2,10 @@
   <dictionary name="project">
     <words>
       <w>cmds</w>
+      <w>envconfig</w>
+      <w>findy</w>
+      <w>gocritic</w>
+      <w>kageyamountain</w>
     </words>
   </dictionary>
 </component>
