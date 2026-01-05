@@ -14,14 +14,23 @@ tasks:
     cmds:
       - docker compose down
 
-  # execute
-  #  example:
-  #   task exec -- --mode two-approve
+  # example:
+  #  task exec -- --mode two-approve --owner owner-name --name repository-name --from 20251001 --to 20251031 --ignore-labels ignore,labels
   exec:
     desc: ghrev実行
     silent: false
     cmds:
       - docker-compose exec -T ghrev go run ./cmd/ghrev/main.go {{.CLI_ARGS}}
+
+  exec-debug:
+    desc: ghrevリモートデバッグ実行
+    silent: false
+    cmds:
+      - |
+        docker compose exec -it ghrev sh -c \
+          "/go/bin/dlv debug /app/cmd/ghrev/main.go \
+          --headless --listen=:2345 --api-version=2 \
+          -- {{.CLI_ARGS}}"
 
   # test
   test:
