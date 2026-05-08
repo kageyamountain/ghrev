@@ -9,7 +9,7 @@ type AppConfig struct {
 }
 
 type GitHubConfig struct {
-	PersonalAccessToken string `envconfig:"APP_GITHUB_PERSONAL_ACCESS_TOKEN" required:"true"`
+	PersonalAccessToken string `envconfig:"GITHUB_PERSONAL_ACCESS_TOKEN" required:"true"`
 }
 
 // Load 環境変数を構造体にマッピングする
