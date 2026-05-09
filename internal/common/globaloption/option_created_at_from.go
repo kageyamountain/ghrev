@@ -1,4 +1,4 @@
-package runtimeoption
+package globaloption
 
 import (
 	"fmt"
