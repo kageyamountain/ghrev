@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const OptionNameCreatedAtFrom string = "from"
+
 type CreatedAtFrom time.Time
 
 func ParseCreatedAtFrom(v string) (CreatedAtFrom, error) {

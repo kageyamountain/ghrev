@@ -2,6 +2,8 @@ package globaloption
 
 import "fmt"
 
+const OptionNameRepositoryOwner string = "owner"
+
 type RepositoryOwner string
 
 func ParseRepositoryOwner(v string) (RepositoryOwner, error) {

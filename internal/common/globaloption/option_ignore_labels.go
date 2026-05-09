@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+const OptionNameIgnoreLabels string = "ignore-labels"
+
 type IgnoreLabel string
 
 func parseIgnoreLabel(v string) (IgnoreLabel, error) {

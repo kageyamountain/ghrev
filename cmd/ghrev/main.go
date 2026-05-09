@@ -36,6 +36,7 @@ func run() int {
 	logContext := &sync.Map{}
 	logContext.Store("log_type", log.LogTypeApp)
 	logContext.Store("execution_id", executionID)
+	logContext.Store("args", os.Args)
 	ctx = context.WithValue(ctx, log.LogContextKey, logContext)
 
 	// logger設定
@@ -64,14 +65,15 @@ func run() int {
 	}
 
 	// サブコマンド名を取得
-	subCommandName, err := subcommand.Parse(os.Args[1])
+	subCommandName, err := subcommand.ParseName(os.Args[1])
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to parse subcommand", slog.Any("error", err), slog.String("subcommand", os.Args[1]))
+		slog.ErrorContext(ctx, "failed to parse subcommand", slog.Any("error", err))
 		return 1
 	}
 
 	// サブコマンドに対応するユースケースをビルド
-	useCase, err := buildUseCase(ctx, appConfig, subCommandName)
+	optionArgs := os.Args[2:]
+	useCase, err := buildUseCase(ctx, appConfig, subCommandName, optionArgs)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get use case", slog.Any("error", err))
 		return 1
@@ -92,15 +94,13 @@ type useCase interface {
 	Do(ctx context.Context) error
 }
 
-func buildUseCase(ctx context.Context, appConfig *config.AppConfig, subCommandName subcommand.Name) (useCase, error) {
+func buildUseCase(ctx context.Context, appConfig *config.AppConfig, subCommandName subcommand.Name, optionArgs []string) (useCase, error) {
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: appConfig.GitHub.PersonalAccessToken},
 	)
 	httpClient := oauth2.NewClient(ctx, tokenSource)
 	githubClient := github.NewClient(httpClient)
 	githubGateway := mygithub.NewGateway(appConfig, githubClient)
-
-	optionArgs := os.Args[2:]
 
 	//exhaustive:enforce
 	switch subCommandName {
