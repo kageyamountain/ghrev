@@ -52,7 +52,6 @@ func (u *UseCase) Do(ctx context.Context) error {
 			}
 		}
 		if shouldSkip {
-			fmt.Println("skip: findy計測除外")
 			continue
 		}
 
