@@ -1,6 +1,8 @@
-package runtimeoption
+package globaloption
 
 import "fmt"
+
+const OptionNameRepositoryName string = "name"
 
 type RepositoryName string
 

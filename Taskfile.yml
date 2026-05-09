@@ -15,7 +15,9 @@ tasks:
       - docker compose down
 
   # example:
-  #  task exec -- --mode two-approve --owner owner-name --name repository-name --from 20251001 --to 20251031 --ignore-labels ignore,labels
+  ## task exec -- help
+  ## task exec -- version
+  ## task exec -- two-approve --owner owner-name --name repository-name --from 20251001 --to 20251031 --ignore-labels label1,label2,label3
   exec:
     desc: ghrev実行
     silent: false
