@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"sync"
 	_ "time/tzdata"
 
 	"github.com/google/go-github/v80/github"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
-	"github.com/kageyamountain/ghrev/internal/common/log"
+	"github.com/kageyamountain/ghrev/internal/common/logger"
 	"github.com/kageyamountain/ghrev/internal/common/subcommand"
 	"github.com/kageyamountain/ghrev/internal/feature/help"
 	"github.com/kageyamountain/ghrev/internal/feature/twoapprove"
@@ -32,16 +31,16 @@ func main() {
 func run() int {
 	ctx := context.Background()
 
-	// LogContextの設定
+	// LogContextMapの設定
 	executionID := uuid.New().String()
-	logContext := &sync.Map{}
-	logContext.Store("log_type", log.LogTypeApp)
-	logContext.Store("execution_id", executionID)
-	logContext.Store("args", os.Args)
-	ctx = context.WithValue(ctx, log.LogContextKey, logContext)
+	logContextMap := logger.NewLogContextMap()
+	logContextMap.Store("log_type", logger.LogTypeApp)
+	logContextMap.Store("execution_id", executionID)
+	logContextMap.Store("args", os.Args)
+	ctx = logger.WithLogContextMap(ctx, logContextMap)
 
 	// logger設定
-	customLogHandler := log.NewCustomLogHandler(
+	customLogHandler := logger.NewCustomLogHandler(
 		slog.NewJSONHandler(
 			os.Stdout,
 			&slog.HandlerOptions{

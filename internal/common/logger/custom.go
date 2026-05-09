@@ -1,20 +1,8 @@
-package log
+package logger
 
 import (
 	"context"
 	"log/slog"
-	"sync"
-)
-
-type logContextKey string
-
-const LogContextKey logContextKey = "LogContext"
-
-type LogType string
-
-const (
-	LogTypeApp    LogType = "app_log"
-	LogTypeAccess LogType = "access_log"
 )
 
 type CustomLogHandler struct {
@@ -27,22 +15,20 @@ func NewCustomLogHandler(handler slog.Handler) *CustomLogHandler {
 	}
 }
 
-// Handle contextにセットされたLogContextからログ出力フィールドを追加する
+// Handle contextにセットされたLogContextMapからログ出力フィールドを追加する
 func (h *CustomLogHandler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
-	// contextからLogContextを取得
-	logContext, ok := ctx.Value(LogContextKey).(*sync.Map)
+	logContextMap, ok := LogContextMapFromContext(ctx)
 	if !ok {
 		return h.Handler.Handle(ctx, r)
 	}
 
-	// LogContextの全エントリをログ出力属性に追加
-	logContext.Range(func(key, value interface{}) bool {
+	r = r.Clone()
+	for key, value := range logContextMap.Range {
 		keyStr, ok2 := key.(string)
 		if ok2 {
-			r.AddAttrs(slog.Attr{Key: keyStr, Value: slog.AnyValue(value)})
+			r.AddAttrs(slog.Any(keyStr, value))
 		}
-		return true
-	})
+	}
 
 	// info: OpenTelemetryと連携する場合は有効化
 	//// OpenTelemetry trace情報を追加
@@ -55,4 +41,16 @@ func (h *CustomLogHandler) Handle(ctx context.Context, r slog.Record) error { //
 	//}
 
 	return h.Handler.Handle(ctx, r)
+}
+
+func (h *CustomLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return &CustomLogHandler{
+		Handler: h.Handler.WithAttrs(attrs),
+	}
+}
+
+func (h *CustomLogHandler) WithGroup(name string) slog.Handler {
+	return &CustomLogHandler{
+		Handler: h.Handler.WithGroup(name),
+	}
 }
