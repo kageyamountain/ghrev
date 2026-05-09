@@ -2,6 +2,8 @@ package globaloption
 
 import "fmt"
 
+const OptionNameRepositoryName string = "name"
+
 type RepositoryName string
 
 func ParseRepositoryName(v string) (RepositoryName, error) {

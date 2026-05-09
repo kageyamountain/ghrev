@@ -12,7 +12,7 @@ const (
 	TwoApprove Name = "two-approve"
 )
 
-func Parse(v string) (Name, error) {
+func ParseName(v string) (Name, error) {
 	switch Name(v) {
 	case Help:
 		return Help, nil
