@@ -5,7 +5,7 @@ import (
 )
 
 type AppConfig struct {
-	GitHub GitHubConfig `envconfig:"GITHUB"`
+	GitHub GitHubConfig
 }
 
 type GitHubConfig struct {
