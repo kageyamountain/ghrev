@@ -10,13 +10,14 @@ import (
 
 	"github.com/google/go-github/v80/github"
 	"github.com/google/uuid"
+	"golang.org/x/oauth2"
+
 	"github.com/kageyamountain/ghrev/internal/common/log"
 	"github.com/kageyamountain/ghrev/internal/common/subcommand"
 	"github.com/kageyamountain/ghrev/internal/feature/help"
 	"github.com/kageyamountain/ghrev/internal/feature/twoapprove"
 	"github.com/kageyamountain/ghrev/internal/feature/version"
 	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
-	"golang.org/x/oauth2"
 
 	"github.com/kageyamountain/ghrev/internal/common/config"
 )
