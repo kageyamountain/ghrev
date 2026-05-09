@@ -9,13 +9,13 @@ type AppConfig struct {
 }
 
 type GitHubConfig struct {
-	PersonalAccessToken string `envconfig:"PERSONAL_ACCESS_TOKEN" required:"true"`
+	PersonalAccessToken string `envconfig:"GITHUB_PERSONAL_ACCESS_TOKEN" required:"true"`
 }
 
-// Load APPプレフィックスを持つ環境変数を構造体マッピングする
+// Load 環境変数を構造体にマッピングする
 func Load() (*AppConfig, error) {
 	var appConfig AppConfig
-	err := envconfig.Process("APP", &appConfig)
+	err := envconfig.Process("", &appConfig)
 	if err != nil {
 		return nil, err
 	}

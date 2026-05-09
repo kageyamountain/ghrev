@@ -4,21 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"slices"
 
 	"github.com/kageyamountain/ghrev/internal/common/config"
-	"github.com/kageyamountain/ghrev/internal/common/runtimeoption"
 	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
 )
 
 type UseCase struct {
-	runtimeOptions *runtimeoption.Options
+	runtimeOptions *RuntimeOptions
 	appConfig      *config.AppConfig
 	githubGateway  mygithub.Gateway
 }
 
 func NewUseCase(
-	runtimeOptions *runtimeoption.Options,
+	runtimeOptions *RuntimeOptions,
 	appConfig *config.AppConfig,
 	githubGateway mygithub.Gateway,
 ) *UseCase {
@@ -47,12 +45,10 @@ func (u *UseCase) Do(ctx context.Context) error {
 		// 特定のラベルが付与されている場合はスキップ
 		ignoreLabels := u.runtimeOptions.IgnoreLabels
 		shouldSkip := false
-		if len(ignoreLabels) > 0 {
-			for _, label := range pullRequest.Labels {
-				if slices.Contains(ignoreLabels, label.GetName()) {
-					shouldSkip = true
-					break
-				}
+		for _, label := range pullRequest.Labels {
+			if ignoreLabels.Contains(label.GetName()) {
+				shouldSkip = true
+				break
 			}
 		}
 		if shouldSkip {

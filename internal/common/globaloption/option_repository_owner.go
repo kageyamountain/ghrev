@@ -1,6 +1,8 @@
-package runtimeoption
+package globaloption
 
 import "fmt"
+
+const OptionNameRepositoryOwner string = "owner"
 
 type RepositoryOwner string
 

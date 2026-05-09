@@ -1,9 +1,11 @@
-package runtimeoption
+package globaloption
 
 import (
 	"fmt"
 	"time"
 )
+
+const OptionNameCreatedAtFrom string = "from"
 
 type CreatedAtFrom time.Time
 

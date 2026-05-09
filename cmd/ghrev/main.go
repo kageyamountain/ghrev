@@ -12,16 +12,24 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
+	"github.com/kageyamountain/ghrev/internal/common/log"
+	"github.com/kageyamountain/ghrev/internal/common/subcommand"
+	"github.com/kageyamountain/ghrev/internal/feature/help"
+	"github.com/kageyamountain/ghrev/internal/feature/twoapprove"
+	"github.com/kageyamountain/ghrev/internal/feature/version"
 	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
 
-	"github.com/kageyamountain/ghrev/internal/common/runtimeoption"
-	"github.com/kageyamountain/ghrev/internal/feature/twoapprove"
-
 	"github.com/kageyamountain/ghrev/internal/common/config"
-	"github.com/kageyamountain/ghrev/internal/common/log"
 )
 
+// ビルド時に -ldflags で書き換える
+var applicationVersion = "dev version"
+
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	ctx := context.Background()
 
 	// LogContextの設定
@@ -29,6 +37,7 @@ func main() {
 	logContext := &sync.Map{}
 	logContext.Store("log_type", log.LogTypeApp)
 	logContext.Store("execution_id", executionID)
+	logContext.Store("args", os.Args)
 	ctx = context.WithValue(ctx, log.LogContextKey, logContext)
 
 	// logger設定
@@ -43,44 +52,50 @@ func main() {
 	slog.SetDefault(slog.New(customLogHandler))
 	slog.InfoContext(ctx, "process started")
 
-	// 実行時引数を取得
-	runtimeOptions, err := runtimeoption.NewOptions()
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to initialize runtime options", slog.Any("error", err))
-		os.Exit(1)
-	}
-	slog.InfoContext(ctx, "runtime options", slog.Any("options", runtimeOptions))
-
-	// 環境変数をAppConfigへマッピング
+	// 環境変数を構造体へマッピング
 	appConfig, err := config.Load()
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to initialize app config", slog.Any("error", err))
-		os.Exit(1)
+		return 1
 	}
 
-	// modeに応じたユースケースを選択
-	useCase, err := selectUseCase(ctx, runtimeOptions, appConfig)
+	// 最小限のバリデーション
+	if len(os.Args) < 2 {
+		slog.ErrorContext(ctx, "subcommand is required")
+		return 1
+	}
+
+	// サブコマンド名を取得
+	subCommandName, err := subcommand.ParseName(os.Args[1])
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to parse subcommand", slog.Any("error", err))
+		return 1
+	}
+
+	// サブコマンドに対応するユースケースをビルド
+	optionArgs := os.Args[2:]
+	useCase, err := buildUseCase(ctx, appConfig, subCommandName, optionArgs)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get use case", slog.Any("error", err))
-		os.Exit(1)
+		return 1
 	}
 
 	// ユースケース実行
 	err = useCase.Do(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to do use case", slog.Any("error", err))
-		os.Exit(1)
+		return 1
 	}
 
 	slog.InfoContext(ctx, "completed successfully")
-	os.Exit(0)
+	return 0
 }
 
 type useCase interface {
 	Do(ctx context.Context) error
 }
 
-func selectUseCase(ctx context.Context, runtimeOptions *runtimeoption.Options, appConfig *config.AppConfig) (useCase, error) {
+func buildUseCase(ctx context.Context, appConfig *config.AppConfig, subCommandName subcommand.Name, optionArgs []string) (useCase, error) {
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: appConfig.GitHub.PersonalAccessToken},
 	)
@@ -89,11 +104,18 @@ func selectUseCase(ctx context.Context, runtimeOptions *runtimeoption.Options, a
 	githubGateway := mygithub.NewGateway(appConfig, githubClient)
 
 	//exhaustive:enforce
-	//nolint:gocritic
-	switch runtimeOptions.Mode {
-	case runtimeoption.ModeTwoApprove:
+	switch subCommandName {
+	case subcommand.Help:
+		return help.NewUseCase(), nil
+	case subcommand.Version:
+		return version.NewUseCase(applicationVersion), nil
+	case subcommand.TwoApprove:
+		runtimeOptions, err := twoapprove.NewRuntimeOptions(optionArgs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize runtime options. err: %w", err)
+		}
 		return twoapprove.NewUseCase(runtimeOptions, appConfig, githubGateway), nil
 	}
 
-	return nil, fmt.Errorf("invalid mode. mode: %s", runtimeOptions.Mode)
+	return nil, fmt.Errorf("invalid subcommand. subCommandName: %s", subCommandName)
 }
