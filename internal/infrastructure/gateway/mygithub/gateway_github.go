@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/v80/github"
-
-	"github.com/kageyamountain/ghrev/internal/common/config"
 )
 
 type Gateway interface {
@@ -17,16 +15,13 @@ type Gateway interface {
 }
 
 type gateway struct {
-	appConfig    *config.AppConfig
 	githubClient *github.Client
 }
 
 func NewGateway(
-	appConfig *config.AppConfig,
 	githubClient *github.Client,
 ) Gateway {
 	return &gateway{
-		appConfig:    appConfig,
 		githubClient: githubClient,
 	}
 }

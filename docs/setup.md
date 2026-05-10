@@ -67,11 +67,27 @@ go mod tidyで依存関係の整理（コンテナ環境なので必須ではな
 go mod tidy
 ```
 
+## GitHub認証
+`ghrev` は GitHub の API を呼び出すため、認証情報を必要とします。  
+認証は [GitHub CLI (`gh`)](https://cli.github.com/) のログインセッションから自動で取得するため、`gh`をインストールして認証してください。
+
+### 1. `gh` のインストール
+[公式のガイド](https://github.com/cli/cli#installation)を参考にインストールしてください。  
+MacであればHomebrew、WindowsであればScoopやWinGetなど。
+
+### 2. `gh auth login` で認証
+```sh
+gh auth login
+```
+対話的なプロンプトに従って GitHub にログインしてください。トークンは OS のキーチェーン等に安全に保管されます。  
+ログイン状態は `gh auth status` で確認できます。
+
 ## ローカル開発環境でのghrev実行方法
 ```shell
 # コンテナ起動
 task compose-up
+
 # ghrev実行
-task exec -- --mode two-approve
+task exec -- two-approve --owner owner-name --name repository-name --from yyyymmdd --to yyyymmdd --ignore-labels label1,label2,label3
 ```
 基本的なコマンドは `task` コマンドで用意しているので `Taskfile.yml` 参照
