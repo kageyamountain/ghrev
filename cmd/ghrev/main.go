@@ -8,7 +8,7 @@ import (
 	"os"
 	_ "time/tzdata"
 
-	ghauth "github.com/cli/go-gh/v2/pkg/auth"
+	"github.com/cli/go-gh/v2/pkg/auth"
 	"github.com/google/go-github/v80/github"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
@@ -88,7 +88,7 @@ type useCase interface {
 }
 
 func buildUseCase(ctx context.Context, subCommandName subcommand.Name, optionArgs []string) (useCase, error) {
-	ghAuthToken, source := ghauth.TokenForHost("github.com")
+	ghAuthToken, source := auth.TokenForHost("github.com")
 	if ghAuthToken == "" {
 		return nil, errors.New("failed to get github token. `gh auth login` is required")
 	}
