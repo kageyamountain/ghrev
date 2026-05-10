@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
 	_ "time/tzdata"
 
+	ghauth "github.com/cli/go-gh/v2/pkg/auth"
 	"github.com/google/go-github/v80/github"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
@@ -17,8 +19,6 @@ import (
 	"github.com/kageyamountain/ghrev/internal/feature/twoapprove"
 	"github.com/kageyamountain/ghrev/internal/feature/version"
 	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
-
-	"github.com/kageyamountain/ghrev/internal/common/config"
 )
 
 // ビルド時に -ldflags で書き換える
@@ -44,19 +44,12 @@ func run() int {
 		slog.NewJSONHandler(
 			os.Stdout,
 			&slog.HandlerOptions{
-				Level: slog.LevelInfo,
+				Level: slog.LevelError,
 			},
 		),
 	)
 	slog.SetDefault(slog.New(customLogHandler))
 	slog.InfoContext(ctx, "process started")
-
-	// 環境変数を構造体へマッピング
-	appConfig, err := config.Load()
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to initialize app config", slog.Any("error", err))
-		return 1
-	}
 
 	// 最小限のバリデーション
 	if len(os.Args) < 2 {
@@ -73,9 +66,10 @@ func run() int {
 
 	// サブコマンドに対応するユースケースをビルド
 	optionArgs := os.Args[2:]
-	useCase, err := buildUseCase(ctx, appConfig, subCommandName, optionArgs)
+	useCase, err := buildUseCase(ctx, subCommandName, optionArgs)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get use case", slog.Any("error", err))
+		fmt.Println(err)
 		return 1
 	}
 
@@ -94,13 +88,19 @@ type useCase interface {
 	Do(ctx context.Context) error
 }
 
-func buildUseCase(ctx context.Context, appConfig *config.AppConfig, subCommandName subcommand.Name, optionArgs []string) (useCase, error) {
+func buildUseCase(ctx context.Context, subCommandName subcommand.Name, optionArgs []string) (useCase, error) {
+	ghAuthToken, source := ghauth.TokenForHost("github.com")
+	if ghAuthToken == "" {
+		return nil, errors.New("failed to get github token. `gh auth login` is required")
+	}
+	slog.InfoContext(ctx, "github token resolved", slog.Any("source", source))
+
 	tokenSource := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: appConfig.GitHub.PersonalAccessToken},
+		&oauth2.Token{AccessToken: ghAuthToken},
 	)
 	httpClient := oauth2.NewClient(ctx, tokenSource)
 	githubClient := github.NewClient(httpClient)
-	githubGateway := mygithub.NewGateway(appConfig, githubClient)
+	githubGateway := mygithub.NewGateway(githubClient)
 
 	//exhaustive:enforce
 	switch subCommandName {
@@ -113,7 +113,7 @@ func buildUseCase(ctx context.Context, appConfig *config.AppConfig, subCommandNa
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize runtime options. err: %w", err)
 		}
-		return twoapprove.NewUseCase(runtimeOptions, appConfig, githubGateway), nil
+		return twoapprove.NewUseCase(runtimeOptions, githubGateway), nil
 	}
 
 	return nil, fmt.Errorf("invalid subcommand. subCommandName: %s", subCommandName)
