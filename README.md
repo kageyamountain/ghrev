@@ -4,12 +4,6 @@
 コードレビューを様々な切り口で可視化することで、レビュー文化の改善や、コードレビューに関わる時間の見える化を支援します。
 
 ## サブコマンド
-### `version`
-ghrevのバージョンを表示します。
-```sh
-ghrev version
-```
-
 ### `help`
 利用可能なサブコマンドのヘルプを表示します。
 ```sh
@@ -34,6 +28,12 @@ ghrev two-approve \
 | `--from` | ✓ | 集計開始日(`YYYYMMDD` 形式) |
 | `--to` | ✓ | 集計終了日(`YYYYMMDD` 形式) |
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
+
+### `version`
+ghrevのバージョンを表示します。
+```sh
+ghrev version
+```
 
 ## セットアップ
 `ghrev` は GitHub の API を呼び出すため、認証情報を必要とします。認証は [GitHub CLI (`gh`)](https://cli.github.com/) のログインセッションから自動で取得します。
