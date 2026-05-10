@@ -22,17 +22,21 @@ tasks:
     desc: ghrev実行
     silent: false
     cmds:
-      - docker-compose exec -T ghrev go run ./cmd/ghrev/main.go {{.CLI_ARGS}}
+      - >-
+        GH_TOKEN=$(gh auth token)
+        docker-compose exec -T -e GH_TOKEN ghrev
+        go run ./cmd/ghrev/main.go {{.CLI_ARGS}}
 
   exec-debug:
     desc: ghrevリモートデバッグ実行
     silent: false
     cmds:
-      - |
-        docker compose exec -it ghrev sh -c \
-          "/go/bin/dlv debug /app/cmd/ghrev/main.go \
-          --headless --listen=:2345 --api-version=2 \
-          -- {{.CLI_ARGS}}"
+      - >-
+        GH_TOKEN=$(gh auth token)
+        docker compose exec -it -e GH_TOKEN ghrev sh -c
+        "/go/bin/dlv debug /app/cmd/ghrev/main.go
+        --headless --listen=:2345 --api-version=2
+        -- {{.CLI_ARGS}}"
 
   # test
   test:
@@ -66,13 +70,6 @@ tasks:
     silent: true
     cmds:
       - go fmt ./...
-
-  # app config
-  appconfig:
-    desc: .env.devのAppConfigマッピングを確認
-    silent: true
-    cmds:
-      - docker-compose exec ghrev go run ./cmd/dev/appconfig/main.go
 
   # mock
   mock-gen:
