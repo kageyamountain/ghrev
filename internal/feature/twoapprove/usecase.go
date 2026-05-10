@@ -5,24 +5,20 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/kageyamountain/ghrev/internal/common/config"
 	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
 )
 
 type UseCase struct {
 	runtimeOptions *RuntimeOptions
-	appConfig      *config.AppConfig
 	githubGateway  mygithub.Gateway
 }
 
 func NewUseCase(
 	runtimeOptions *RuntimeOptions,
-	appConfig *config.AppConfig,
 	githubGateway mygithub.Gateway,
 ) *UseCase {
 	return &UseCase{
 		runtimeOptions: runtimeOptions,
-		appConfig:      appConfig,
 		githubGateway:  githubGateway,
 	}
 }
