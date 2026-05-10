@@ -11,7 +11,7 @@ type CreatedAtFrom time.Time
 
 func ParseCreatedAtFrom(v string) (CreatedAtFrom, error) {
 	if v == "" {
-		return CreatedAtFrom{}, fmt.Errorf("--fron option is required")
+		return CreatedAtFrom{}, fmt.Errorf("--from option is required")
 	}
 
 	date, err := time.ParseInLocation("20060102", v, time.Local)
