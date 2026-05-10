@@ -69,7 +69,6 @@ func run() int {
 	useCase, err := buildUseCase(ctx, subCommandName, optionArgs)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get use case", slog.Any("error", err))
-		fmt.Println(err)
 		return 1
 	}
 
