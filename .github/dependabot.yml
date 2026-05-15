@@ -11,8 +11,14 @@ updates:
     open-pull-requests-limit: 20
     cooldown:
       default-days: 7
-    reviewers:
-      - "kageyamountain"
+    groups:
+      aws-sdk-go-v2:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2*"
+          - "github.com/aws/smithy-go"
+      opentelemetry:
+        patterns:
+          - "go.opentelemetry.io/*"
     assignees:
       - "kageyamountain"
     labels:
@@ -29,8 +35,6 @@ updates:
     open-pull-requests-limit: 20
     cooldown:
       default-days: 7
-    reviewers:
-      - "kageyamountain"
     assignees:
       - "kageyamountain"
     labels:
@@ -47,8 +51,6 @@ updates:
     open-pull-requests-limit: 20
     cooldown:
       default-days: 7
-    reviewers:
-      - "kageyamountain"
     assignees:
       - "kageyamountain"
     labels:
