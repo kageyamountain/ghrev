@@ -8,6 +8,7 @@
       <w>gocritic</w>
       <w>golangci</w>
       <w>kageyamountain</w>
+      <w>opentelemetry</w>
     </words>
   </dictionary>
 </component>
