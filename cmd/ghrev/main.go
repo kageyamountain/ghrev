@@ -14,11 +14,11 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/kageyamountain/ghrev/internal/common/logger"
-	"github.com/kageyamountain/ghrev/internal/common/subcommand"
-	"github.com/kageyamountain/ghrev/internal/feature/help"
-	"github.com/kageyamountain/ghrev/internal/feature/twoapprove"
-	"github.com/kageyamountain/ghrev/internal/feature/version"
 	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
+	"github.com/kageyamountain/ghrev/internal/subcommand"
+	"github.com/kageyamountain/ghrev/internal/subcommand/help"
+	"github.com/kageyamountain/ghrev/internal/subcommand/twoapprove"
+	"github.com/kageyamountain/ghrev/internal/subcommand/version"
 )
 
 // ビルド時に -ldflags で書き換える
