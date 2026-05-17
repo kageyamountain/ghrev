@@ -27,9 +27,9 @@ func (u *UseCase) Do(ctx context.Context) error {
 	owner := u.runtimeOptions.RepositoryOwner.String()
 	name := u.runtimeOptions.RepositoryName.String()
 
-	pullRequests, err := u.githubGateway.FindAllPullRequests(ctx, owner, name)
+	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, owner, name)
 	if err != nil {
-		return fmt.Errorf("failed to find pull requests: %w", err)
+		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
 
 	ignoreLabels := u.runtimeOptions.IgnoreLabels.Strings()
@@ -37,37 +37,29 @@ func (u *UseCase) Do(ctx context.Context) error {
 	createdAtTo := u.runtimeOptions.CreatedAtTo.Time()
 
 	targetCount := 0
-	for _, pullRequest := range pullRequests {
+	for _, summary := range summaries {
 		// TODO errgroupで並列化
-		if !pullRequest.IsCreatedWithin(createdAtFrom, createdAtTo) {
+		if !summary.IsCreatedWithin(createdAtFrom, createdAtTo) {
 			continue
 		}
 
-		if pullRequest.ContainsAnyLabel(ignoreLabels) {
+		if summary.ContainsAnyLabel(ignoreLabels) {
 			continue
 		}
 
-		openedAt, err2 := u.githubGateway.FindPullRequestFirstOpenedAt(ctx, owner, name, pullRequest.Number)
+		detail, err2 := u.githubGateway.FindPullRequestDetail(ctx, owner, name, summary)
 		if err2 != nil {
-			slog.ErrorContext(ctx, "failed to get pull request open time", slog.Any("error", err2), slog.Any("pullRequest", pullRequest))
+			slog.ErrorContext(ctx, "failed to find pull request detail", slog.Any("error", err2), slog.Any("pullRequestSummary", summary))
 			continue
 		}
-		pullRequest.OpenedAt = openedAt
 
-		reviews, err2 := u.githubGateway.FindPullRequestReviews(ctx, owner, name, pullRequest.Number)
-		if err2 != nil {
-			slog.ErrorContext(ctx, "failed to get pull request reviews", slog.Any("error", err2), slog.Any("pullRequest", pullRequest))
-			continue
-		}
-		pullRequest.Reviews = reviews
-
-		duration, ok := pullRequest.TimeToSecondApproval()
+		duration, ok := detail.TimeToSecondApproval()
 		if !ok {
 			continue
 		}
 		targetCount++
 
-		fmt.Printf("%s %.2f時間\n", pullRequest.HTMLURL, duration.Hours())
+		fmt.Printf("%s %.2f時間\n", detail.HTMLURL, duration.Hours())
 	}
 
 	if targetCount == 0 {
