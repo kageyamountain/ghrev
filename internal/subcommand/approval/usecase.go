@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/kageyamountain/ghrev/internal/common/progress"
 	"github.com/kageyamountain/ghrev/internal/domain/aggregate/mygithub"
 	"golang.org/x/sync/errgroup"
 )
@@ -27,8 +28,11 @@ func NewUseCase(
 const maxConcurrency = 10
 
 func (u *UseCase) Do(ctx context.Context) error {
+	progressStopFunc := progress.Start("計測中")
+
 	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name)
 	if err != nil {
+		progressStopFunc()
 		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
 
@@ -42,6 +46,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 		})
 	}
 	_ = eg.Wait()
+	progressStopFunc()
 
 	var header bool
 	for _, resultRow := range resultRows {
