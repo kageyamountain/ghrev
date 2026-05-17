@@ -2,6 +2,7 @@ package mygithub
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/go-github/v80/github"
 
@@ -18,10 +19,13 @@ func NewGateway(githubClient *github.Client) mygithub.Gateway {
 	}
 }
 
-func (g *gateway) FindAllPullRequestSummaries(ctx context.Context, owner, name string) ([]*mygithub.PullRequestSummary, error) {
+// FindPullRequestSummaries は created 降順で PR 一覧を取得し、createdAtFrom より古い PR に
+// 到達した時点でページングを打ち切ることで、期間外の PR を取りに行く無駄な API コールを避ける。
+// createdAtTo 側の上限フィルタは降順取得では API コール削減に繋がらないため呼び出し側に委ねる。
+func (g *gateway) FindPullRequestSummaries(ctx context.Context, owner, name string, createdAtFrom time.Time) ([]*mygithub.PullRequestSummary, error) {
 	options := &github.PullRequestListOptions{
 		State:     "all",
-		Sort:      "updated",
+		Sort:      "created",
 		Direction: "desc",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
@@ -34,8 +38,18 @@ func (g *gateway) FindAllPullRequestSummaries(ctx context.Context, owner, name s
 		if err != nil {
 			return nil, err
 		}
+
+		reachedCutoff := false
 		for _, pr := range prs {
-			result = append(result, toPullRequestSummary(pr))
+			summary := toPullRequestSummary(pr)
+			if summary.CreatedAt.Before(createdAtFrom) {
+				reachedCutoff = true
+				break
+			}
+			result = append(result, summary)
+		}
+		if reachedCutoff {
+			break
 		}
 
 		if response.NextPage == 0 {
