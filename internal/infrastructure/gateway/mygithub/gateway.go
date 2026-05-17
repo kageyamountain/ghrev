@@ -1,0 +1,131 @@
+package mygithub
+
+import (
+	"context"
+
+	"github.com/google/go-github/v80/github"
+
+	"github.com/kageyamountain/ghrev/internal/domain/aggregate/mygithub"
+)
+
+type gateway struct {
+	githubClient *github.Client
+}
+
+func NewGateway(githubClient *github.Client) mygithub.Gateway {
+	return &gateway{
+		githubClient: githubClient,
+	}
+}
+
+func (g *gateway) FindAllPullRequestSummaries(ctx context.Context, owner, name string) ([]*mygithub.PullRequestSummary, error) {
+	options := &github.PullRequestListOptions{
+		State:     "all",
+		Sort:      "updated",
+		Direction: "desc",
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	var result []*mygithub.PullRequestSummary
+	for {
+		prs, response, err := g.githubClient.PullRequests.List(ctx, owner, name, options)
+		if err != nil {
+			return nil, err
+		}
+		for _, pr := range prs {
+			result = append(result, toPullRequestSummary(pr))
+		}
+
+		if response.NextPage == 0 {
+			break
+		}
+		options.Page = response.NextPage
+	}
+
+	return result, nil
+}
+
+// FindPullRequestDetail は ready-for-review 日時とレビュー一覧を取得し、
+// 与えられた PullRequestSummary と合わせて PullRequestDetail を構築して返す。
+func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string, summary *mygithub.PullRequestSummary) (*mygithub.PullRequestDetail, error) {
+	events, err := g.findIssueEvents(ctx, owner, name, summary.Number)
+	if err != nil {
+		return nil, err
+	}
+	openedAt := events.FirstReadyForReviewAt()
+
+	reviews, err := g.findReviews(ctx, owner, name, summary.Number)
+	if err != nil {
+		return nil, err
+	}
+
+	return mygithub.NewPullRequestDetail(
+		summary,
+		openedAt,
+		reviews,
+	), nil
+}
+
+func (g *gateway) findIssueEvents(ctx context.Context, owner, name string, number int) (mygithub.IssueEvents, error) {
+	listOptions := &github.ListOptions{PerPage: 100}
+
+	var result []mygithub.IssueEvent
+	for {
+		events, response, err := g.githubClient.Issues.ListIssueEvents(ctx, owner, name, number, listOptions)
+		if err != nil {
+			return nil, err
+		}
+		for _, event := range events {
+			result = append(result, mygithub.NewIssueEvent(
+				mygithub.IssueEventType(event.GetEvent()),
+				event.GetCreatedAt().Time,
+			))
+		}
+
+		if response.NextPage == 0 {
+			break
+		}
+		listOptions.Page = response.NextPage
+	}
+	return mygithub.NewIssueEvents(result), nil
+}
+
+func (g *gateway) findReviews(ctx context.Context, owner, name string, number int) (mygithub.Reviews, error) {
+	listOptions := &github.ListOptions{PerPage: 100}
+
+	var result []mygithub.Review
+	for {
+		reviews, response, err := g.githubClient.PullRequests.ListReviews(ctx, owner, name, number, listOptions)
+		if err != nil {
+			return nil, err
+		}
+		for _, review := range reviews {
+			result = append(result, mygithub.NewReview(
+				review.GetUser().GetLogin(),
+				mygithub.ReviewState(review.GetState()),
+				review.GetSubmittedAt().Time,
+			))
+		}
+
+		if response.NextPage == 0 {
+			break
+		}
+		listOptions.Page = response.NextPage
+	}
+	return mygithub.NewReviews(result), nil
+}
+
+func toPullRequestSummary(pr *github.PullRequest) *mygithub.PullRequestSummary {
+	labels := make([]string, 0, len(pr.Labels))
+	for _, label := range pr.Labels {
+		labels = append(labels, label.GetName())
+	}
+	return &mygithub.PullRequestSummary{
+		Number:    pr.GetNumber(),
+		CreatedAt: pr.GetCreatedAt().Time,
+		Labels:    labels,
+		HTMLURL:   pr.GetHTMLURL(),
+	}
+}
