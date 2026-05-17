@@ -37,13 +37,14 @@ func (p *PullRequestDetail) FirstOpenedAt() time.Time {
 	return p.CreatedAt
 }
 
-// TimeToSecondApproval は FirstOpenedAt から2件目の承認までの所要時間を返す。
+// TimeToNthApproval は FirstOpenedAt から n 件目の承認までの所要時間を返す。
+// n は 1-indexed（n=1 は最初の承認）。同一ユーザの2回目以降の承認はカウントしない。
 // JST 基準の土日に該当する時間は計測から除外する。
-// 承認が2件未満の場合は ok=false。
-func (p *PullRequestDetail) TimeToSecondApproval() (time.Duration, bool) {
+// 承認が n 件未満の場合は ok=false。
+func (p *PullRequestDetail) TimeToNthApproval(n int) (time.Duration, bool) {
 	approved := p.reviews.Approved().EarliestPerUser()
-	if len(approved) < 2 {
+	if len(approved) < n {
 		return 0, false
 	}
-	return mytime.BusinessDuration(p.FirstOpenedAt(), approved[1].SubmittedAt), true
+	return mytime.BusinessDuration(p.FirstOpenedAt(), approved[n-1].SubmittedAt), true
 }

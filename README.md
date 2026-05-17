@@ -4,14 +4,15 @@
 コードレビューを様々な切り口で可視化することで、レビュー文化の改善や、コードレビューに関わる時間の見える化を支援します。
 
 ## サブコマンド
-### `two-approve`
-指定期間内にマージされた PR を対象に、PR オープンから 2 件目の Approve までにかかった時間を集計します。
+### `approval`
+指定期間内にマージされた PR を対象に、PR オープンから指定件数の Approve が揃うまでにかかった時間を集計します。
 ```sh
-ghrev two-approve \
+ghrev approval \
   --owner <organization-or-user> \
   --name <repository> \
   --from <YYYYMMDD> \
   --to <YYYYMMDD> \
+  --required-approvals <N> \
   --ignore-labels <label1,label2,...>
 ```
 
@@ -21,6 +22,7 @@ ghrev two-approve \
 | `--name` | ✓ | 対象リポジトリ名 |
 | `--from` | ✓ | 集計開始日(`YYYYMMDD` 形式) |
 | `--to` | ✓ | 集計終了日(`YYYYMMDD` 形式) |
+| `--required-approvals` | ✓ | レビュー完了とみなす Approve の件数(1 以上の整数) |
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
 
 ### `help`
@@ -64,5 +66,5 @@ github.com
 
 `gh` を利用できない環境では、Personal Access Token (PAT) を発行して `GH_TOKEN` にセットすることでも動作しますが、PAT は長命で漏洩リスクが高いため、`gh auth login` による認証を強く推奨します。
 ```sh
-GH_TOKEN=<your-pat> ghrev two-approve --owner ... --name ... --from ... --to ...
+GH_TOKEN=<your-pat> ghrev approval --owner ... --name ... --from ... --to ... --required-approvals ...
 ```
