@@ -1,6 +1,10 @@
 package mygithub
 
-import "time"
+import (
+	"time"
+
+	"github.com/kageyamountain/ghrev/internal/common/mytime"
+)
 
 // PullRequestDetail は PullRequestSummary にレビュー情報を付与した詳細集約。
 // レビュー情報を前提とするドメインロジックはこの型のメソッドとして実装する。
@@ -34,11 +38,12 @@ func (p *PullRequestDetail) FirstOpenedAt() time.Time {
 }
 
 // TimeToSecondApproval は FirstOpenedAt から2件目の承認までの所要時間を返す。
+// JST 基準の土日に該当する時間は計測から除外する。
 // 承認が2件未満の場合は ok=false。
 func (p *PullRequestDetail) TimeToSecondApproval() (time.Duration, bool) {
 	approved := p.reviews.Approved().EarliestPerUser()
 	if len(approved) < 2 {
 		return 0, false
 	}
-	return approved[1].SubmittedAt.Sub(p.FirstOpenedAt()), true
+	return mytime.BusinessDuration(p.FirstOpenedAt(), approved[1].SubmittedAt), true
 }
