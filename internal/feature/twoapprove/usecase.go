@@ -58,7 +58,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 		}
 		targetCount++
 
-		fmt.Printf("%s %.2f時間\n", detail.HTMLURL, duration.Hours())
+		fmt.Printf("%s %.2f時間 +%d/-%d\n", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions)
 	}
 
 	if targetCount == 0 {

@@ -6,17 +6,21 @@ import "time"
 // レビュー情報を前提とするドメインロジックはこの型のメソッドとして実装する。
 type PullRequestDetail struct {
 	PullRequestSummary
-	openedAt *time.Time
-	reviews  Reviews
+	openedAt  *time.Time
+	reviews   Reviews
+	Additions int
+	Deletions int
 }
 
 // NewPullRequestDetail は summary に openedAt と reviews を取り込んだ PullRequestDetail を返す。
 // openedAt は ready-for-review の発火日時。nil の場合は「作成時から open」を意味する。
-func NewPullRequestDetail(summary *PullRequestSummary, openedAt *time.Time, reviews Reviews) *PullRequestDetail {
+func NewPullRequestDetail(summary *PullRequestSummary, openedAt *time.Time, reviews Reviews, additions, deletions int) *PullRequestDetail {
 	return &PullRequestDetail{
 		PullRequestSummary: *summary,
 		openedAt:           openedAt,
 		reviews:            reviews,
+		Additions:          additions,
+		Deletions:          deletions,
 	}
 }
 
