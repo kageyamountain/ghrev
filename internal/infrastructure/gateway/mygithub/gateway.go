@@ -70,35 +70,49 @@ func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string,
 
 func (g *gateway) findIssueEvents(ctx context.Context, owner, name string, number int) (mygithub.IssueEvents, error) {
 	listOptions := &github.ListOptions{PerPage: 100}
-	events, _, err := g.githubClient.Issues.ListIssueEvents(ctx, owner, name, number, listOptions)
-	if err != nil {
-		return nil, err
-	}
 
-	result := make([]mygithub.IssueEvent, 0, len(events))
-	for _, event := range events {
-		result = append(result, mygithub.NewIssueEvent(
-			mygithub.IssueEventType(event.GetEvent()),
-			event.GetCreatedAt().Time,
-		))
+	var result []mygithub.IssueEvent
+	for {
+		events, response, err := g.githubClient.Issues.ListIssueEvents(ctx, owner, name, number, listOptions)
+		if err != nil {
+			return nil, err
+		}
+		for _, event := range events {
+			result = append(result, mygithub.NewIssueEvent(
+				mygithub.IssueEventType(event.GetEvent()),
+				event.GetCreatedAt().Time,
+			))
+		}
+
+		if response.NextPage == 0 {
+			break
+		}
+		listOptions.Page = response.NextPage
 	}
 	return mygithub.NewIssueEvents(result), nil
 }
 
 func (g *gateway) findReviews(ctx context.Context, owner, name string, number int) (mygithub.Reviews, error) {
 	listOptions := &github.ListOptions{PerPage: 100}
-	reviews, _, err := g.githubClient.PullRequests.ListReviews(ctx, owner, name, number, listOptions)
-	if err != nil {
-		return nil, err
-	}
 
-	result := make([]mygithub.Review, 0, len(reviews))
-	for _, review := range reviews {
-		result = append(result, mygithub.NewReview(
-			review.GetUser().GetLogin(),
-			mygithub.ReviewState(review.GetState()),
-			review.GetSubmittedAt().Time,
-		))
+	var result []mygithub.Review
+	for {
+		reviews, response, err := g.githubClient.PullRequests.ListReviews(ctx, owner, name, number, listOptions)
+		if err != nil {
+			return nil, err
+		}
+		for _, review := range reviews {
+			result = append(result, mygithub.NewReview(
+				review.GetUser().GetLogin(),
+				mygithub.ReviewState(review.GetState()),
+				review.GetSubmittedAt().Time,
+			))
+		}
+
+		if response.NextPage == 0 {
+			break
+		}
+		listOptions.Page = response.NextPage
 	}
 	return mygithub.NewReviews(result), nil
 }
