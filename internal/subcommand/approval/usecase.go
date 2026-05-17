@@ -30,7 +30,7 @@ const maxConcurrency = 10
 func (u *UseCase) Do(ctx context.Context) error {
 	progressStopFunc := progress.Start("計測中")
 
-	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name)
+	summaries, err := u.githubGateway.FindPullRequestSummaries(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, u.runtimeOptions.CreatedAtFrom)
 	if err != nil {
 		progressStopFunc()
 		return fmt.Errorf("failed to find pull request summaries: %w", err)
