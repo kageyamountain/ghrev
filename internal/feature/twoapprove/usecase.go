@@ -26,15 +26,14 @@ func NewUseCase(
 func (u *UseCase) Do(ctx context.Context) error {
 	owner := u.runtimeOptions.RepositoryOwner.String()
 	name := u.runtimeOptions.RepositoryName.String()
+	createdAtFrom := u.runtimeOptions.CreatedAtFrom.Time()
+	createdAtTo := u.runtimeOptions.CreatedAtTo.Time()
+	ignoreLabels := u.runtimeOptions.IgnoreLabels.Strings()
 
 	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, owner, name)
 	if err != nil {
 		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
-
-	ignoreLabels := u.runtimeOptions.IgnoreLabels.Strings()
-	createdAtFrom := u.runtimeOptions.CreatedAtFrom.Time()
-	createdAtTo := u.runtimeOptions.CreatedAtTo.Time()
 
 	targetCount := 0
 	for _, summary := range summaries {
