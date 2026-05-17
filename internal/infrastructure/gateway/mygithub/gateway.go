@@ -61,10 +61,17 @@ func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string,
 		return nil, err
 	}
 
+	pr, _, err := g.githubClient.PullRequests.Get(ctx, owner, name, summary.Number)
+	if err != nil {
+		return nil, err
+	}
+
 	return mygithub.NewPullRequestDetail(
 		summary,
 		openedAt,
 		reviews,
+		pr.GetAdditions(),
+		pr.GetDeletions(),
 	), nil
 }
 
