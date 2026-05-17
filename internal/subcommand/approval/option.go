@@ -2,18 +2,19 @@ package approval
 
 import (
 	"flag"
+	"time"
 
 	"github.com/kageyamountain/ghrev/internal/common/globaloption"
 	"github.com/kageyamountain/ghrev/internal/subcommand"
 )
 
 type RuntimeOptions struct {
-	RepositoryOwner   globaloption.RepositoryOwner
-	RepositoryName    globaloption.RepositoryName
-	CreatedAtFrom     globaloption.CreatedAtFrom
-	CreatedAtTo       globaloption.CreatedAtTo
-	IgnoreLabels      globaloption.IgnoreLabels
-	RequiredApprovals RequiredApprovals
+	Owner             string
+	Name              string
+	CreatedAtFrom     time.Time
+	CreatedAtTo       time.Time
+	IgnoreLabels      []string
+	RequiredApprovals int
 }
 
 func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
@@ -60,11 +61,11 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 	}
 
 	return &RuntimeOptions{
-		RepositoryOwner:   repositoryOwner,
-		RepositoryName:    repositoryName,
-		CreatedAtFrom:     createdAtFrom,
-		CreatedAtTo:       createdAtTo,
-		IgnoreLabels:      ignoreLabels,
-		RequiredApprovals: requiredApprovals,
+		Owner:             repositoryOwner.String(),
+		Name:              repositoryName.String(),
+		CreatedAtFrom:     createdAtFrom.Time(),
+		CreatedAtTo:       createdAtTo.Time(),
+		IgnoreLabels:      ignoreLabels.Strings(),
+		RequiredApprovals: requiredApprovals.Int(),
 	}, nil
 }
