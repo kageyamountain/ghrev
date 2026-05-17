@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	"github.com/kageyamountain/ghrev/internal/common/globaloption"
-	"github.com/kageyamountain/ghrev/internal/common/subcommand"
+	"github.com/kageyamountain/ghrev/internal/subcommand"
 )
 
 type RuntimeOptions struct {
