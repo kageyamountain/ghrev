@@ -28,7 +28,7 @@ ghrev approval \
 | `--ignore-labels` |   | Labels to exclude from aggregation (comma-separated) |
 
 ### `first-review`
-For PRs created within the specified period, aggregates how long it took from PR open until the first review reaction (any of approve / changes_requested / commented). DISMISSED reviews are not counted as a reaction.
+For PRs created within the specified period, aggregates how long it took from PR open until the first review reaction (any of approve / changes_requested / commented). DISMISSED reviews, bot reviews, and self-reviews by the PR author are not counted as reactions.
 ```sh
 ghrev first-review \
   --owner <organization-or-user> \
