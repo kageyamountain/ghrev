@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
+	"github.com/kageyamountain/ghrev/internal/domain/aggregate/mygithub"
 )
 
 type UseCase struct {
@@ -24,60 +24,41 @@ func NewUseCase(
 }
 
 func (u *UseCase) Do(ctx context.Context) error {
-	pullRequests, err := u.githubGateway.FindPullRequests(ctx, u.runtimeOptions.RepositoryOwner.String(), u.runtimeOptions.RepositoryName.String())
+	owner := u.runtimeOptions.RepositoryOwner.String()
+	name := u.runtimeOptions.RepositoryName.String()
+	createdAtFrom := u.runtimeOptions.CreatedAtFrom.Time()
+	createdAtTo := u.runtimeOptions.CreatedAtTo.Time()
+	ignoreLabels := u.runtimeOptions.IgnoreLabels.Strings()
+
+	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, owner, name)
 	if err != nil {
-		return fmt.Errorf("failed to find pull requests: %w", err)
+		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
 
 	targetCount := 0
-	for _, pullRequest := range pullRequests {
+	for _, summary := range summaries {
 		// TODO errgroupで並列化
-		// PR作成日時が対象期間外の場合はスキップ
-		createdAt := *pullRequest.CreatedAt.GetTime()
-		if createdAt.Before(u.runtimeOptions.CreatedAtFrom.Time()) || createdAt.After(u.runtimeOptions.CreatedAtTo.Time()) {
+		if !summary.IsCreatedWithin(createdAtFrom, createdAtTo) {
 			continue
 		}
 
-		// 特定のラベルが付与されている場合はスキップ
-		ignoreLabels := u.runtimeOptions.IgnoreLabels
-		shouldSkip := false
-		for _, label := range pullRequest.Labels {
-			if ignoreLabels.Contains(label.GetName()) {
-				shouldSkip = true
-				break
-			}
-		}
-		if shouldSkip {
+		if summary.ContainsAnyLabel(ignoreLabels) {
 			continue
 		}
 
-		// PRの初回Open日時を取得
-		openedAt, err2 := u.githubGateway.FindPullRequestFirstOpenTime(ctx, u.runtimeOptions.RepositoryOwner.String(), u.runtimeOptions.RepositoryName.String(), pullRequest.GetNumber())
+		detail, err2 := u.githubGateway.FindPullRequestDetail(ctx, owner, name, summary)
 		if err2 != nil {
-			slog.ErrorContext(ctx, "failed to get pull request open time", slog.Any("error", err2), slog.Any("pullRequest", pullRequest))
-			continue
-		}
-		// 作成時からOpenしている場合はPR作成日時と同値をセット
-		if openedAt == nil {
-			openedAt = &createdAt
-		}
-
-		// approveを取得
-		approveTimes, err2 := u.githubGateway.FindPullRequestApproveTimes(ctx, u.runtimeOptions.RepositoryOwner.String(), u.runtimeOptions.RepositoryName.String(), pullRequest.GetNumber())
-		if err2 != nil {
-			slog.ErrorContext(ctx, "failed to get pull request approve times", slog.Any("error", err2), slog.Any("pullRequest", pullRequest))
+			slog.ErrorContext(ctx, "failed to find pull request detail", slog.Any("error", err2), slog.Any("pullRequestSummary", summary))
 			continue
 		}
 
-		// approveが2名未満の場合はスキップ
-		if len(approveTimes) < 2 {
+		duration, ok := detail.TimeToSecondApproval()
+		if !ok {
 			continue
 		}
 		targetCount++
 
-		// PRの初回Open日時から2人目のapprove日時までの経過時間を算出してコンソール出力
-		timeToSecondApproval := approveTimes[1].Sub(*openedAt)
-		fmt.Printf("%s %.2f時間\n", *pullRequest.HTMLURL, timeToSecondApproval.Hours())
+		fmt.Printf("%s %.2f時間\n", detail.HTMLURL, duration.Hours())
 	}
 
 	if targetCount == 0 {

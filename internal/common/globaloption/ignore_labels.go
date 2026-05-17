@@ -42,11 +42,10 @@ func ParseIgnoreLabels(v string) (IgnoreLabels, error) {
 	return ignoreLabels, nil
 }
 
-func (i IgnoreLabels) Contains(labelName string) bool {
+func (i IgnoreLabels) Strings() []string {
+	result := make([]string, 0, len(i))
 	for _, label := range i {
-		if label.String() == labelName {
-			return true
-		}
+		result = append(result, label.String())
 	}
-	return false
+	return result
 }
