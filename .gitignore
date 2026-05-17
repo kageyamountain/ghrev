@@ -1,2 +1,5 @@
 # env
 .env.dev
+
+# Claude Code local settings
+.claude/settings.local.json
