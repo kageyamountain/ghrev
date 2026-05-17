@@ -32,26 +32,10 @@ func (u *UseCase) Do(ctx context.Context) error {
 	var resultRows []string
 	for _, summary := range summaries {
 		// TODO errgroupで並列化
-		if !summary.IsCreatedWithin(u.runtimeOptions.CreatedAtFrom, u.runtimeOptions.CreatedAtTo) {
-			continue
+		row := u.measureApprovalTime(ctx, summary)
+		if row != "" {
+			resultRows = append(resultRows, row)
 		}
-
-		if summary.ContainsAnyLabel(u.runtimeOptions.IgnoreLabels) {
-			continue
-		}
-
-		detail, err2 := u.githubGateway.FindPullRequestDetail(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, summary)
-		if err2 != nil {
-			slog.ErrorContext(ctx, "failed to find pull request detail", slog.Any("error", err2), slog.Any("pullRequestSummary", summary))
-			continue
-		}
-
-		duration, ok := detail.TimeToNthApproval(u.runtimeOptions.RequiredApprovals)
-		if !ok {
-			continue
-		}
-
-		resultRows = append(resultRows, fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions))
 	}
 
 	if len(resultRows) == 0 {
@@ -65,4 +49,27 @@ func (u *UseCase) Do(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (u *UseCase) measureApprovalTime(ctx context.Context, summary *mygithub.PullRequestSummary) string {
+	if !summary.IsCreatedWithin(u.runtimeOptions.CreatedAtFrom, u.runtimeOptions.CreatedAtTo) {
+		return ""
+	}
+
+	if summary.ContainsAnyLabel(u.runtimeOptions.IgnoreLabels) {
+		return ""
+	}
+
+	detail, err := u.githubGateway.FindPullRequestDetail(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, summary)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to find pull request detail", slog.Any("error", err), slog.Any("pullRequestSummary", summary))
+		return ""
+	}
+
+	duration, ok := detail.TimeToNthApproval(u.runtimeOptions.RequiredApprovals)
+	if !ok {
+		return ""
+	}
+
+	return fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions)
 }
