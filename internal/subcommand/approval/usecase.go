@@ -24,14 +24,7 @@ func NewUseCase(
 }
 
 func (u *UseCase) Do(ctx context.Context) error {
-	owner := u.runtimeOptions.RepositoryOwner.String()
-	name := u.runtimeOptions.RepositoryName.String()
-	createdAtFrom := u.runtimeOptions.CreatedAtFrom.Time()
-	createdAtTo := u.runtimeOptions.CreatedAtTo.Time()
-	ignoreLabels := u.runtimeOptions.IgnoreLabels.Strings()
-	requiredApprovals := u.runtimeOptions.RequiredApprovals.Int()
-
-	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, owner, name)
+	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name)
 	if err != nil {
 		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
@@ -39,21 +32,21 @@ func (u *UseCase) Do(ctx context.Context) error {
 	var resultRows []string
 	for _, summary := range summaries {
 		// TODO errgroupで並列化
-		if !summary.IsCreatedWithin(createdAtFrom, createdAtTo) {
+		if !summary.IsCreatedWithin(u.runtimeOptions.CreatedAtFrom, u.runtimeOptions.CreatedAtTo) {
 			continue
 		}
 
-		if summary.ContainsAnyLabel(ignoreLabels) {
+		if summary.ContainsAnyLabel(u.runtimeOptions.IgnoreLabels) {
 			continue
 		}
 
-		detail, err2 := u.githubGateway.FindPullRequestDetail(ctx, owner, name, summary)
+		detail, err2 := u.githubGateway.FindPullRequestDetail(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, summary)
 		if err2 != nil {
 			slog.ErrorContext(ctx, "failed to find pull request detail", slog.Any("error", err2), slog.Any("pullRequestSummary", summary))
 			continue
 		}
 
-		duration, ok := detail.TimeToNthApproval(requiredApprovals)
+		duration, ok := detail.TimeToNthApproval(u.runtimeOptions.RequiredApprovals)
 		if !ok {
 			continue
 		}
@@ -62,7 +55,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 	}
 
 	if len(resultRows) == 0 {
-		fmt.Printf("%d名以上のApproveのあるPRが見つかりませんでした\n", requiredApprovals)
+		fmt.Printf("%d名以上のApproveのあるPRが見つかりませんでした\n", u.runtimeOptions.RequiredApprovals)
 		return nil
 	}
 
