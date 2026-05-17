@@ -17,7 +17,7 @@ tasks:
   # example:
   ## task exec -- help
   ## task exec -- version
-  ## task exec -- two-approve --owner owner-name --name repository-name --from 20251001 --to 20251031 --ignore-labels label1,label2,label3
+  ## task exec -- approval --owner owner-name --name repository-name --from 20251001 --to 20251031 --required-approvals 2 --ignore-labels label1,label2,label3
   exec:
     desc: ghrev実行
     silent: false
