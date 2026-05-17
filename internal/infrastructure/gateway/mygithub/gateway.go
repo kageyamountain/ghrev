@@ -61,10 +61,17 @@ func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string,
 		return nil, err
 	}
 
+	pullRequest, _, err := g.githubClient.PullRequests.Get(ctx, owner, name, summary.Number)
+	if err != nil {
+		return nil, err
+	}
+
 	return mygithub.NewPullRequestDetail(
 		summary,
 		openedAt,
 		reviews,
+		pullRequest.GetAdditions(),
+		pullRequest.GetDeletions(),
 	), nil
 }
 
@@ -117,15 +124,15 @@ func (g *gateway) findReviews(ctx context.Context, owner, name string, number in
 	return mygithub.NewReviews(result), nil
 }
 
-func toPullRequestSummary(pr *github.PullRequest) *mygithub.PullRequestSummary {
-	labels := make([]string, 0, len(pr.Labels))
-	for _, label := range pr.Labels {
+func toPullRequestSummary(pullRequest *github.PullRequest) *mygithub.PullRequestSummary {
+	labels := make([]string, 0, len(pullRequest.Labels))
+	for _, label := range pullRequest.Labels {
 		labels = append(labels, label.GetName())
 	}
 	return &mygithub.PullRequestSummary{
-		Number:    pr.GetNumber(),
-		CreatedAt: pr.GetCreatedAt().Time,
+		Number:    pullRequest.GetNumber(),
+		CreatedAt: pullRequest.GetCreatedAt().Time,
 		Labels:    labels,
-		HTMLURL:   pr.GetHTMLURL(),
+		HTMLURL:   pullRequest.GetHTMLURL(),
 	}
 }
