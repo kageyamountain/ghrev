@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/kageyamountain/ghrev/internal/common/progress"
 	"github.com/kageyamountain/ghrev/internal/domain/aggregate/mygithub"
-	"golang.org/x/sync/errgroup"
 )
 
 type UseCase struct {
@@ -45,7 +46,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 			return nil
 		})
 	}
-	_ = eg.Wait()
+	eg.Wait() //nolint:errcheck // 各 goroutine は常に nil を返すため
 	progressStopFunc()
 
 	var header bool
