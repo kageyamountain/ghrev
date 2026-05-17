@@ -88,6 +88,6 @@ gh auth login
 task compose-up
 
 # ghrev実行
-task exec -- two-approve --owner owner-name --name repository-name --from yyyymmdd --to yyyymmdd --ignore-labels label1,label2,label3
+task exec -- approval --owner owner-name --name repository-name --from yyyymmdd --to yyyymmdd --required-approvals 2 --ignore-labels label1,label2,label3
 ```
 基本的なコマンドは `task` コマンドで用意しているので `Taskfile.yml` 参照

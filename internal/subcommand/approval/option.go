@@ -1,4 +1,4 @@
-package twoapprove
+package approval
 
 import (
 	"flag"
@@ -8,20 +8,22 @@ import (
 )
 
 type RuntimeOptions struct {
-	RepositoryOwner globaloption.RepositoryOwner
-	RepositoryName  globaloption.RepositoryName
-	CreatedAtFrom   globaloption.CreatedAtFrom
-	CreatedAtTo     globaloption.CreatedAtTo
-	IgnoreLabels    globaloption.IgnoreLabels
+	RepositoryOwner   globaloption.RepositoryOwner
+	RepositoryName    globaloption.RepositoryName
+	CreatedAtFrom     globaloption.CreatedAtFrom
+	CreatedAtTo       globaloption.CreatedAtTo
+	IgnoreLabels      globaloption.IgnoreLabels
+	RequiredApprovals RequiredApprovals
 }
 
 func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
-	flagSet := flag.NewFlagSet(subcommand.TwoApprove.String(), flag.ContinueOnError)
+	flagSet := flag.NewFlagSet(subcommand.Approval.String(), flag.ContinueOnError)
 	repositoryOwnerFlag := flagSet.String(globaloption.OptionNameRepositoryOwner, "", "target repository owner")
 	repositoryNameFlag := flagSet.String(globaloption.OptionNameRepositoryName, "", "target repository name")
 	createdAtFromFlag := flagSet.String(globaloption.OptionNameCreatedAtFrom, "", "pull request's created at from")
 	createdAtToFlag := flagSet.String(globaloption.OptionNameCreatedAtTo, "", "pull request's created at to")
 	ignoreLabelsFlag := flagSet.String(globaloption.OptionNameIgnoreLabels, "", "ignore labels")
+	requiredApprovalsFlag := flagSet.Int(OptionNameRequiredApprovals, 0, "number of approvals required to complete review")
 	err := flagSet.Parse(optionArgs)
 	if err != nil {
 		return nil, err
@@ -52,11 +54,17 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 		return nil, err
 	}
 
+	requiredApprovals, err := ParseRequiredApprovals(*requiredApprovalsFlag)
+	if err != nil {
+		return nil, err
+	}
+
 	return &RuntimeOptions{
-		RepositoryOwner: repositoryOwner,
-		RepositoryName:  repositoryName,
-		CreatedAtFrom:   createdAtFrom,
-		CreatedAtTo:     createdAtTo,
-		IgnoreLabels:    ignoreLabels,
+		RepositoryOwner:   repositoryOwner,
+		RepositoryName:    repositoryName,
+		CreatedAtFrom:     createdAtFrom,
+		CreatedAtTo:       createdAtTo,
+		IgnoreLabels:      ignoreLabels,
+		RequiredApprovals: requiredApprovals,
 	}, nil
 }

@@ -1,4 +1,4 @@
-package twoapprove
+package approval
 
 import (
 	"context"
@@ -29,6 +29,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 	createdAtFrom := u.runtimeOptions.CreatedAtFrom.Time()
 	createdAtTo := u.runtimeOptions.CreatedAtTo.Time()
 	ignoreLabels := u.runtimeOptions.IgnoreLabels.Strings()
+	requiredApprovals := u.runtimeOptions.RequiredApprovals.Int()
 
 	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, owner, name)
 	if err != nil {
@@ -52,7 +53,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 			continue
 		}
 
-		duration, ok := detail.TimeToSecondApproval()
+		duration, ok := detail.TimeToNthApproval(requiredApprovals)
 		if !ok {
 			continue
 		}
@@ -61,7 +62,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 	}
 
 	if len(resultRows) == 0 {
-		fmt.Println("2名以上のApproveのあるPRが見つかりませんでした")
+		fmt.Printf("%d名以上のApproveのあるPRが見つかりませんでした\n", requiredApprovals)
 		return nil
 	}
 
