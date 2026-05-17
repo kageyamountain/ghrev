@@ -28,7 +28,7 @@ ghrev approval \
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
 
 ### `first-review`
-指定期間内に作成された PR を対象に、PR オープンから最初のレビュー反応(approve / changes_requested / commented のいずれか)までにかかった時間を集計します。DISMISSED されたレビューは反応とみなしません。
+指定期間内に作成された PR を対象に、PR オープンから最初のレビュー反応(approve / changes_requested / commented のいずれか)までにかかった時間を集計します。DISMISSED されたレビュー、bot のレビュー、PR 作成者自身のレビューは反応とみなしません。
 ```sh
 ghrev first-review \
   --owner <organization-or-user> \
