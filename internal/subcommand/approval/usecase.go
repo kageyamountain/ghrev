@@ -3,7 +3,6 @@ package approval
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
 	"golang.org/x/sync/errgroup"
 
@@ -38,16 +37,23 @@ func (u *UseCase) Do(ctx context.Context) error {
 	}
 
 	resultRows := make([]string, len(summaries))
-	var eg errgroup.Group // 1件のエラーで全体を中断したくないので WithContext は使わない
+	eg, egCtx := errgroup.WithContext(ctx)
 	eg.SetLimit(maxConcurrency)
 	for i, summary := range summaries {
 		eg.Go(func() error {
-			resultRows[i] = u.measureApprovalTime(ctx, summary)
+			row, err2 := u.measureApprovalTime(egCtx, summary)
+			if err2 != nil {
+				return err2
+			}
+			resultRows[i] = row
 			return nil
 		})
 	}
-	eg.Wait() //nolint:errcheck // 各 goroutine は常に nil を返すため
+	err = eg.Wait()
 	progressStopFunc()
+	if err != nil {
+		return fmt.Errorf("failed to measure approval times: %w", err)
+	}
 
 	var header bool
 	for _, resultRow := range resultRows {
@@ -67,25 +73,24 @@ func (u *UseCase) Do(ctx context.Context) error {
 	return nil
 }
 
-func (u *UseCase) measureApprovalTime(ctx context.Context, summary *mygithub.PullRequestSummary) string {
+func (u *UseCase) measureApprovalTime(ctx context.Context, summary *mygithub.PullRequestSummary) (string, error) {
 	if !summary.IsCreatedWithin(u.runtimeOptions.CreatedAtFrom, u.runtimeOptions.CreatedAtTo) {
-		return ""
+		return "", nil
 	}
 
 	if summary.ContainsAnyLabel(u.runtimeOptions.IgnoreLabels) {
-		return ""
+		return "", nil
 	}
 
 	detail, err := u.githubGateway.FindPullRequestDetail(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, summary)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to find pull request detail", slog.Any("error", err), slog.Any("pullRequestSummary", summary))
-		return ""
+		return "", fmt.Errorf("find pull request detail (PR #%d): %w", summary.Number, err)
 	}
 
 	duration, ok := detail.TimeToNthApproval(u.runtimeOptions.RequiredApprovals)
 	if !ok {
-		return ""
+		return "", nil
 	}
 
-	return fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions)
+	return fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions), nil
 }
