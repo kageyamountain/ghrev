@@ -17,6 +17,7 @@ import (
 	"github.com/kageyamountain/ghrev/internal/infrastructure/gateway/mygithub"
 	"github.com/kageyamountain/ghrev/internal/subcommand"
 	"github.com/kageyamountain/ghrev/internal/subcommand/approval"
+	"github.com/kageyamountain/ghrev/internal/subcommand/firstreview"
 	"github.com/kageyamountain/ghrev/internal/subcommand/help"
 	"github.com/kageyamountain/ghrev/internal/subcommand/version"
 )
@@ -113,6 +114,12 @@ func buildUseCase(ctx context.Context, subCommandName subcommand.Name, optionArg
 			return nil, fmt.Errorf("failed to initialize runtime options. err: %w", err)
 		}
 		return approval.NewUseCase(runtimeOptions, githubGateway), nil
+	case subcommand.FirstReview:
+		runtimeOptions, err := firstreview.NewRuntimeOptions(optionArgs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize runtime options. err: %w", err)
+		}
+		return firstreview.NewUseCase(runtimeOptions, githubGateway), nil
 	}
 
 	return nil, fmt.Errorf("invalid subcommand. subCommandName: %s", subCommandName)

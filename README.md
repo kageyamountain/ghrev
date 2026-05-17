@@ -7,7 +7,7 @@
 
 ## サブコマンド
 ### `approval`
-指定期間内にマージされた PR を対象に、PR オープンから指定件数の Approve が揃うまでにかかった時間を集計します。
+指定期間内に作成された PR を対象に、PR オープンから指定件数の Approve が揃うまでにかかった時間を集計します。
 ```sh
 ghrev approval \
   --owner <organization-or-user> \
@@ -25,6 +25,25 @@ ghrev approval \
 | `--from` | ✓ | 集計開始日(`YYYYMMDD` 形式) |
 | `--to` | ✓ | 集計終了日(`YYYYMMDD` 形式) |
 | `--required-approvals` | ✓ | レビュー完了とみなす Approve の件数(1 以上の整数) |
+| `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
+
+### `first-review`
+指定期間内に作成された PR を対象に、PR オープンから最初のレビュー反応(approve / changes_requested / commented のいずれか)までにかかった時間を集計します。DISMISSED されたレビューは反応とみなしません。
+```sh
+ghrev first-review \
+  --owner <organization-or-user> \
+  --name <repository> \
+  --from <YYYYMMDD> \
+  --to <YYYYMMDD> \
+  --ignore-labels <label1,label2,...>
+```
+
+| オプション | 必須 | 説明 |
+| --- | :---: | --- |
+| `--owner` | ✓ | 対象リポジトリのオーナー(ユーザー名または Organization 名) |
+| `--name` | ✓ | 対象リポジトリ名 |
+| `--from` | ✓ | 集計開始日(`YYYYMMDD` 形式) |
+| `--to` | ✓ | 集計終了日(`YYYYMMDD` 形式) |
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
 
 ### `help`

@@ -110,6 +110,7 @@ func (g *gateway) findReviews(ctx context.Context, owner, name string, number in
 		for _, review := range reviews {
 			result = append(result, mygithub.NewReview(
 				review.GetUser().GetLogin(),
+				review.GetUser().GetType() == "Bot",
 				mygithub.ReviewState(review.GetState()),
 				review.GetSubmittedAt().Time,
 			))
@@ -130,6 +131,7 @@ func toPullRequestSummary(pullRequest *github.PullRequest) *mygithub.PullRequest
 	}
 	return &mygithub.PullRequestSummary{
 		Number:    pullRequest.GetNumber(),
+		Author:    pullRequest.GetUser().GetLogin(),
 		CreatedAt: pullRequest.GetCreatedAt().Time,
 		Labels:    labels,
 		HTMLURL:   pullRequest.GetHTMLURL(),
