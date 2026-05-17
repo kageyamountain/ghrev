@@ -7,7 +7,7 @@ By visualizing code reviews from various angles, it helps improve review culture
 
 ## Subcommands
 ### `approval`
-For PRs merged within the specified period, aggregates how long it took from PR open until the required number of approvals were collected.
+For PRs created within the specified period, aggregates how long it took from PR open until the required number of approvals were collected.
 ```sh
 ghrev approval \
   --owner <organization-or-user> \
@@ -25,6 +25,25 @@ ghrev approval \
 | `--from` | ✓ | Start date of aggregation (`YYYYMMDD` format) |
 | `--to` | ✓ | End date of aggregation (`YYYYMMDD` format) |
 | `--required-approvals` | ✓ | Number of approvals required to consider a review complete (integer ≥ 1) |
+| `--ignore-labels` |   | Labels to exclude from aggregation (comma-separated) |
+
+### `first-review`
+For PRs created within the specified period, aggregates how long it took from PR open until the first review reaction (any of approve / changes_requested / commented). DISMISSED reviews are not counted as a reaction.
+```sh
+ghrev first-review \
+  --owner <organization-or-user> \
+  --name <repository> \
+  --from <YYYYMMDD> \
+  --to <YYYYMMDD> \
+  --ignore-labels <label1,label2,...>
+```
+
+| Option | Required | Description |
+| --- | :---: | --- |
+| `--owner` | ✓ | Owner of the target repository (user or organization name) |
+| `--name` | ✓ | Target repository name |
+| `--from` | ✓ | Start date of aggregation (`YYYYMMDD` format) |
+| `--to` | ✓ | End date of aggregation (`YYYYMMDD` format) |
 | `--ignore-labels` |   | Labels to exclude from aggregation (comma-separated) |
 
 ### `help`
