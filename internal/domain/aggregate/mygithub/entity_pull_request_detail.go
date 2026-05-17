@@ -10,31 +10,22 @@ import (
 // レビュー情報を前提とするドメインロジックはこの型のメソッドとして実装する。
 type PullRequestDetail struct {
 	PullRequestSummary
-	openedAt  *time.Time
-	reviews   Reviews
-	Additions int
-	Deletions int
+	FirstOpenedAt time.Time
+	reviews       Reviews
+	Additions     int
+	Deletions     int
 }
 
-// NewPullRequestDetail は summary に openedAt と reviews を取り込んだ PullRequestDetail を返す。
-// openedAt は ready-for-review の発火日時。nil の場合は「作成時から open」を意味する。
-func NewPullRequestDetail(summary *PullRequestSummary, openedAt *time.Time, reviews Reviews, additions, deletions int) *PullRequestDetail {
+// NewPullRequestDetail は summary に events と reviews を取り込んだ PullRequestDetail を返す。
+// FirstOpenedAt（PR が初めてレビュー可能になった日時）は events と summary.CreatedAt からここで導出する。
+func NewPullRequestDetail(summary *PullRequestSummary, events IssueEvents, reviews Reviews, additions, deletions int) *PullRequestDetail {
 	return &PullRequestDetail{
 		PullRequestSummary: *summary,
-		openedAt:           openedAt,
+		FirstOpenedAt:      events.FirstOpenedAt(summary.CreatedAt),
 		reviews:            reviews,
 		Additions:          additions,
 		Deletions:          deletions,
 	}
-}
-
-// FirstOpenedAt は PR が初めてレビュー可能になった日時を返す。
-// openedAt が nil（明示的な ready-for-review 遷移がない）場合は CreatedAt にフォールバックする。
-func (p *PullRequestDetail) FirstOpenedAt() time.Time {
-	if p.openedAt != nil {
-		return *p.openedAt
-	}
-	return p.CreatedAt
 }
 
 // TimeToNthApproval は FirstOpenedAt から n 件目の承認までの所要時間を返す。
@@ -46,5 +37,19 @@ func (p *PullRequestDetail) TimeToNthApproval(n int) (time.Duration, bool) {
 	if len(approved) < n {
 		return 0, false
 	}
-	return mytime.BusinessDuration(p.FirstOpenedAt(), approved[n-1].SubmittedAt), true
+	return mytime.BusinessDuration(p.FirstOpenedAt, approved[n-1].SubmittedAt), true
+}
+
+// TimeToFirstReview は FirstOpenedAt から最初のレビュー反応までの所要時間を返す。
+// approve / changes_requested / commented のいずれかを「反応」とみなし、DISMISSED と bot のレビュー、
+// および PR 作者自身のレビュー（CodeRabbit への返信等のセルフコメント）は除外する。
+// 同一ユーザが複数回反応した場合は最古のものを採用する（既存の Nth approval と同じ方針）。
+// JST 基準の土日に該当する時間は計測から除外する。
+// 反応が1件もない場合は ok=false。
+func (p *PullRequestDetail) TimeToFirstReview() (time.Duration, bool) {
+	reviews := p.reviews.ExcludingBots().ExcludingUser(p.Author).ExcludingDismissed().EarliestPerUser()
+	if len(reviews) == 0 {
+		return 0, false
+	}
+	return mytime.BusinessDuration(p.FirstOpenedAt, reviews[0].SubmittedAt), true
 }

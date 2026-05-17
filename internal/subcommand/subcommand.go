@@ -7,9 +7,10 @@ import (
 type Name string
 
 const (
-	Help     Name = "help"
-	Version  Name = "version"
-	Approval Name = "approval"
+	Help        Name = "help"
+	Version     Name = "version"
+	Approval    Name = "approval"
+	FirstReview Name = "first-review"
 )
 
 func ParseName(v string) (Name, error) {
@@ -20,6 +21,8 @@ func ParseName(v string) (Name, error) {
 		return Version, nil
 	case Approval:
 		return Approval, nil
+	case FirstReview:
+		return FirstReview, nil
 	}
 
 	return "", fmt.Errorf("invalid subcommand. subcommand: %s", v)

@@ -47,14 +47,13 @@ func (g *gateway) FindAllPullRequestSummaries(ctx context.Context, owner, name s
 	return result, nil
 }
 
-// FindPullRequestDetail は ready-for-review 日時とレビュー一覧を取得し、
+// FindPullRequestDetail はイベントとレビューを取得し、PR が初めて open になった日時を解決した上で、
 // 与えられた PullRequestSummary と合わせて PullRequestDetail を構築して返す。
 func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string, summary *mygithub.PullRequestSummary) (*mygithub.PullRequestDetail, error) {
 	events, err := g.findIssueEvents(ctx, owner, name, summary.Number)
 	if err != nil {
 		return nil, err
 	}
-	openedAt := events.FirstReadyForReviewAt()
 
 	reviews, err := g.findReviews(ctx, owner, name, summary.Number)
 	if err != nil {
@@ -68,7 +67,7 @@ func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string,
 
 	return mygithub.NewPullRequestDetail(
 		summary,
-		openedAt,
+		events,
 		reviews,
 		pullRequest.GetAdditions(),
 		pullRequest.GetDeletions(),
@@ -111,6 +110,7 @@ func (g *gateway) findReviews(ctx context.Context, owner, name string, number in
 		for _, review := range reviews {
 			result = append(result, mygithub.NewReview(
 				review.GetUser().GetLogin(),
+				review.GetUser().GetType() == "Bot",
 				mygithub.ReviewState(review.GetState()),
 				review.GetSubmittedAt().Time,
 			))
@@ -131,6 +131,7 @@ func toPullRequestSummary(pullRequest *github.PullRequest) *mygithub.PullRequest
 	}
 	return &mygithub.PullRequestSummary{
 		Number:    pullRequest.GetNumber(),
+		Author:    pullRequest.GetUser().GetLogin(),
 		CreatedAt: pullRequest.GetCreatedAt().Time,
 		Labels:    labels,
 		HTMLURL:   pullRequest.GetHTMLURL(),
