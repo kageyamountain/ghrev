@@ -35,7 +35,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
 
-	targetCount := 0
+	var resultRows []string
 	for _, summary := range summaries {
 		// TODO errgroupで並列化
 		if !summary.IsCreatedWithin(createdAtFrom, createdAtTo) {
@@ -56,14 +56,18 @@ func (u *UseCase) Do(ctx context.Context) error {
 		if !ok {
 			continue
 		}
-		targetCount++
 
-		fmt.Printf("%s %.2f時間 +%d/-%d\n", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions)
+		resultRows = append(resultRows, fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions))
 	}
 
-	if targetCount == 0 {
+	if len(resultRows) == 0 {
 		fmt.Println("2名以上のApproveのあるPRが見つかりませんでした")
 		return nil
+	}
+
+	fmt.Println("URL 所要時間 変更行数")
+	for _, resultRow := range resultRows {
+		fmt.Println(resultRow)
 	}
 
 	return nil
