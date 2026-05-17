@@ -17,13 +17,15 @@ const (
 
 type Review struct {
 	User        string
+	IsBot       bool
 	State       ReviewState
 	SubmittedAt time.Time
 }
 
-func NewReview(user string, state ReviewState, submittedAt time.Time) Review {
+func NewReview(user string, isBot bool, state ReviewState, submittedAt time.Time) Review {
 	return Review{
 		User:        user,
+		IsBot:       isBot,
 		State:       state,
 		SubmittedAt: submittedAt,
 	}
@@ -46,6 +48,45 @@ func (r Reviews) Approved() Reviews {
 		if review.IsApproved() {
 			result = append(result, review)
 		}
+	}
+	return result
+}
+
+// ExcludingDismissed は DISMISSED ステートのレビューを除外して返す。（元の順序を保持）
+// 「最初のレビュー反応」を扱う際、後で取り消された approve は反応としてカウントしない方針に対応する。
+func (r Reviews) ExcludingDismissed() Reviews {
+	result := make(Reviews, 0, len(r))
+	for _, review := range r {
+		if review.State == ReviewStateDismissed {
+			continue
+		}
+		result = append(result, review)
+	}
+	return result
+}
+
+// ExcludingBots は GitHub App 等のボットによるレビューを除外して返す。（元の順序を保持）
+// CodeRabbit のような自動レビュー bot が「最初のレビュー」として計測されるのを防ぐ。
+func (r Reviews) ExcludingBots() Reviews {
+	result := make(Reviews, 0, len(r))
+	for _, review := range r {
+		if review.IsBot {
+			continue
+		}
+		result = append(result, review)
+	}
+	return result
+}
+
+// ExcludingUser は指定ユーザのレビューを除外して返す。（元の順序を保持）
+// PR 作者自身がレビュー形式で残すコメント（CodeRabbit への返信等）を first review と誤認しないために使う。
+func (r Reviews) ExcludingUser(login string) Reviews {
+	result := make(Reviews, 0, len(r))
+	for _, review := range r {
+		if review.User == login {
+			continue
+		}
+		result = append(result, review)
 	}
 	return result
 }

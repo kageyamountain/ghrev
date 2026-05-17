@@ -6,6 +6,7 @@ import "time"
 // 期間／ラベルなどメタデータだけで判定できるフィルタリングはこの型のメソッドで行う。
 type PullRequestSummary struct {
 	Number    int
+	Author    string
 	CreatedAt time.Time
 	Labels    []string
 	HTMLURL   string
