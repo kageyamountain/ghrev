@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/kageyamountain/ghrev/internal/domain/aggregate/mygithub"
+	"golang.org/x/sync/errgroup"
 )
 
 type UseCase struct {
@@ -23,29 +24,38 @@ func NewUseCase(
 	}
 }
 
+const maxConcurrency = 10
+
 func (u *UseCase) Do(ctx context.Context) error {
 	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name)
 	if err != nil {
 		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
 
-	var resultRows []string
-	for _, summary := range summaries {
-		// TODO errgroupで並列化
-		row := u.measureApprovalTime(ctx, summary)
-		if row != "" {
-			resultRows = append(resultRows, row)
-		}
+	resultRows := make([]string, len(summaries))
+	var eg errgroup.Group // 1件のエラーで全体を中断したくないので WithContext は使わない
+	eg.SetLimit(maxConcurrency)
+	for i, summary := range summaries {
+		eg.Go(func() error {
+			resultRows[i] = u.measureApprovalTime(ctx, summary)
+			return nil
+		})
 	}
+	_ = eg.Wait()
 
-	if len(resultRows) == 0 {
-		fmt.Printf("%d名以上のApproveのあるPRが見つかりませんでした\n", u.runtimeOptions.RequiredApprovals)
-		return nil
-	}
-
-	fmt.Println("URL 所要時間 変更行数")
+	var header bool
 	for _, resultRow := range resultRows {
+		if resultRow == "" {
+			continue
+		}
+		if !header {
+			fmt.Println("URL 所要時間 変更行数")
+			header = true
+		}
 		fmt.Println(resultRow)
+	}
+	if !header {
+		fmt.Printf("%d名以上のApproveのあるPRが見つかりませんでした\n", u.runtimeOptions.RequiredApprovals)
 	}
 
 	return nil
