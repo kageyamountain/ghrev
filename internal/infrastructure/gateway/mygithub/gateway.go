@@ -2,7 +2,6 @@ package mygithub
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/go-github/v80/github"
 
@@ -51,33 +50,39 @@ func (g *gateway) FindAllPullRequestSummaries(ctx context.Context, owner, name s
 // FindPullRequestDetail は ready-for-review 日時とレビュー一覧を取得し、
 // 与えられた PullRequestSummary と合わせて PullRequestDetail を構築して返す。
 func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string, summary *mygithub.PullRequestSummary) (*mygithub.PullRequestDetail, error) {
-	openedAt, err := g.findFirstOpenedAt(ctx, owner, name, summary.Number)
+	events, err := g.findIssueEvents(ctx, owner, name, summary.Number)
 	if err != nil {
 		return nil, err
 	}
+	openedAt := events.FirstReadyForReviewAt()
 
 	reviews, err := g.findReviews(ctx, owner, name, summary.Number)
 	if err != nil {
 		return nil, err
 	}
 
-	return mygithub.NewPullRequestDetail(summary, openedAt, reviews), nil
+	return mygithub.NewPullRequestDetail(
+		summary,
+		openedAt,
+		reviews,
+	), nil
 }
 
-func (g *gateway) findFirstOpenedAt(ctx context.Context, owner, name string, number int) (*time.Time, error) {
+func (g *gateway) findIssueEvents(ctx context.Context, owner, name string, number int) (mygithub.IssueEvents, error) {
 	listOptions := &github.ListOptions{PerPage: 100}
 	events, _, err := g.githubClient.Issues.ListIssueEvents(ctx, owner, name, number, listOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	// events は時系列順に返ってくるため最初に見つかった ready_for_review が初回 Open 日時。
+	result := make([]mygithub.IssueEvent, 0, len(events))
 	for _, event := range events {
-		if event.GetEvent() == "ready_for_review" {
-			return event.CreatedAt.GetTime(), nil
-		}
+		result = append(result, mygithub.NewIssueEvent(
+			mygithub.IssueEventType(event.GetEvent()),
+			event.GetCreatedAt().Time,
+		))
 	}
-	return nil, nil
+	return mygithub.NewIssueEvents(result), nil
 }
 
 func (g *gateway) findReviews(ctx context.Context, owner, name string, number int) (mygithub.Reviews, error) {
