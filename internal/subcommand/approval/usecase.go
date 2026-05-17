@@ -3,8 +3,10 @@ package approval
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
+	"golang.org/x/sync/errgroup"
+
+	"github.com/kageyamountain/ghrev/internal/common/progress"
 	"github.com/kageyamountain/ghrev/internal/domain/aggregate/mygithub"
 )
 
@@ -23,53 +25,72 @@ func NewUseCase(
 	}
 }
 
-func (u *UseCase) Do(ctx context.Context) error {
-	owner := u.runtimeOptions.RepositoryOwner.String()
-	name := u.runtimeOptions.RepositoryName.String()
-	createdAtFrom := u.runtimeOptions.CreatedAtFrom.Time()
-	createdAtTo := u.runtimeOptions.CreatedAtTo.Time()
-	ignoreLabels := u.runtimeOptions.IgnoreLabels.Strings()
-	requiredApprovals := u.runtimeOptions.RequiredApprovals.Int()
+const maxConcurrency = 10
 
-	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, owner, name)
+func (u *UseCase) Do(ctx context.Context) error {
+	progressStopFunc := progress.Start("計測中")
+
+	summaries, err := u.githubGateway.FindAllPullRequestSummaries(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name)
 	if err != nil {
+		progressStopFunc()
 		return fmt.Errorf("failed to find pull request summaries: %w", err)
 	}
 
-	var resultRows []string
-	for _, summary := range summaries {
-		// TODO errgroupで並列化
-		if !summary.IsCreatedWithin(createdAtFrom, createdAtTo) {
-			continue
-		}
-
-		if summary.ContainsAnyLabel(ignoreLabels) {
-			continue
-		}
-
-		detail, err2 := u.githubGateway.FindPullRequestDetail(ctx, owner, name, summary)
-		if err2 != nil {
-			slog.ErrorContext(ctx, "failed to find pull request detail", slog.Any("error", err2), slog.Any("pullRequestSummary", summary))
-			continue
-		}
-
-		duration, ok := detail.TimeToNthApproval(requiredApprovals)
-		if !ok {
-			continue
-		}
-
-		resultRows = append(resultRows, fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions))
+	resultRows := make([]string, len(summaries))
+	eg, egCtx := errgroup.WithContext(ctx)
+	eg.SetLimit(maxConcurrency)
+	for i, summary := range summaries {
+		eg.Go(func() error {
+			row, err2 := u.measureApprovalTime(egCtx, summary)
+			if err2 != nil {
+				return err2
+			}
+			resultRows[i] = row
+			return nil
+		})
+	}
+	err = eg.Wait()
+	progressStopFunc()
+	if err != nil {
+		return fmt.Errorf("failed to measure approval times: %w", err)
 	}
 
-	if len(resultRows) == 0 {
-		fmt.Printf("%d名以上のApproveのあるPRが見つかりませんでした\n", requiredApprovals)
-		return nil
-	}
-
-	fmt.Println("URL 所要時間 変更行数")
+	var header bool
 	for _, resultRow := range resultRows {
+		if resultRow == "" {
+			continue
+		}
+		if !header {
+			fmt.Println("URL 所要時間 変更行数")
+			header = true
+		}
 		fmt.Println(resultRow)
+	}
+	if !header {
+		fmt.Printf("%d名以上のApproveのあるPRが見つかりませんでした\n", u.runtimeOptions.RequiredApprovals)
 	}
 
 	return nil
+}
+
+func (u *UseCase) measureApprovalTime(ctx context.Context, summary *mygithub.PullRequestSummary) (string, error) {
+	if !summary.IsCreatedWithin(u.runtimeOptions.CreatedAtFrom, u.runtimeOptions.CreatedAtTo) {
+		return "", nil
+	}
+
+	if summary.ContainsAnyLabel(u.runtimeOptions.IgnoreLabels) {
+		return "", nil
+	}
+
+	detail, err := u.githubGateway.FindPullRequestDetail(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, summary)
+	if err != nil {
+		return "", fmt.Errorf("find pull request detail (PR #%d): %w", summary.Number, err)
+	}
+
+	duration, ok := detail.TimeToNthApproval(u.runtimeOptions.RequiredApprovals)
+	if !ok {
+		return "", nil
+	}
+
+	return fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions), nil
 }
