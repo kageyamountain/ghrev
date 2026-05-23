@@ -82,6 +82,12 @@ func (u *UseCase) measureFirstReviewTime(ctx context.Context, summary *mygithub.
 		return "", nil
 	}
 
+	if len(u.runtimeOptions.Assignees) > 0 {
+		if !summary.HasAnyAssignee(u.runtimeOptions.Assignees) {
+			return "", nil
+		}
+	}
+
 	detail, err := u.githubGateway.FindPullRequestDetail(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, summary)
 	if err != nil {
 		return "", fmt.Errorf("find pull request detail (PR #%d): %w", summary.Number, err)
