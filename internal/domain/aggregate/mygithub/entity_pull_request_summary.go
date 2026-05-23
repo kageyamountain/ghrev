@@ -9,6 +9,7 @@ type PullRequestSummary struct {
 	Author    string
 	CreatedAt time.Time
 	Labels    []string
+	Assignees []string
 	HTMLURL   string
 }
 
@@ -22,6 +23,18 @@ func (p *PullRequestSummary) ContainsAnyLabel(targetLabels []string) bool {
 	for _, prLabel := range p.Labels {
 		for _, target := range targetLabels {
 			if prLabel == target {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// HasAnyAssignee は targetAssignees のいずれかに一致する assignee が PR に設定されているかを返す。
+func (p *PullRequestSummary) HasAnyAssignee(targetAssignees []string) bool {
+	for _, prAssignee := range p.Assignees {
+		for _, target := range targetAssignees {
+			if prAssignee == target {
 				return true
 			}
 		}

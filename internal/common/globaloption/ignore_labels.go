@@ -24,6 +24,7 @@ func (i IgnoreLabel) String() string {
 type IgnoreLabels []IgnoreLabel
 
 func ParseIgnoreLabels(v string) (IgnoreLabels, error) {
+	v = strings.Trim(v, ", ")
 	if v == "" {
 		return IgnoreLabels{}, nil
 	}

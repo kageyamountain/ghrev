@@ -15,7 +15,8 @@ ghrev approval \
   --from <YYYYMMDD> \
   --to <YYYYMMDD> \
   --required-approvals <N> \
-  --ignore-labels <label1,label2,...>
+  --ignore-labels <label1,label2,...> \
+  --assignees <user1,user2,...>
 ```
 
 | オプション | 必須 | 説明 |
@@ -26,6 +27,7 @@ ghrev approval \
 | `--to` | ✓ | 集計終了日(`YYYYMMDD` 形式) |
 | `--required-approvals` | ✓ | レビュー完了とみなす Approve の件数(1 以上の整数) |
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
+| `--assignees` |   | 指定した assignee のいずれかが設定されている PR のみを集計対象にする(カンマ区切り) |
 
 ### `first-review`
 指定期間内に作成された PR を対象に、PR オープンから最初のレビュー反応(approve / changes_requested / commented のいずれか)までにかかった時間を集計します。DISMISSED されたレビュー、bot のレビュー、PR 作成者自身のレビューは反応とみなしません。
@@ -35,7 +37,8 @@ ghrev first-review \
   --name <repository> \
   --from <YYYYMMDD> \
   --to <YYYYMMDD> \
-  --ignore-labels <label1,label2,...>
+  --ignore-labels <label1,label2,...> \
+  --assignees <user1,user2,...>
 ```
 
 | オプション | 必須 | 説明 |
@@ -45,6 +48,7 @@ ghrev first-review \
 | `--from` | ✓ | 集計開始日(`YYYYMMDD` 形式) |
 | `--to` | ✓ | 集計終了日(`YYYYMMDD` 形式) |
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
+| `--assignees` |   | 指定した assignee のいずれかが設定されている PR のみを集計対象にする(カンマ区切り) |
 
 ### `help`
 利用可能なサブコマンドのヘルプを表示します。
