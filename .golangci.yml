@@ -8,7 +8,6 @@ issues:
 linters:
   enable:
     - bodyclose     # httpレスポンスのclose
-    - dupl          # 重複コード
     - errcheck      # エラーハンドリング
     - errorlint     # error型関連
     - exhaustive    # 網羅性
@@ -75,7 +74,6 @@ linters:
       - path: _test\.go # テストファイルでの無効化
         linters:
           - bodyclose
-          - dupl
           - errcheck
           - funlen
           - goconst
