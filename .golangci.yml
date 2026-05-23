@@ -33,6 +33,7 @@ linters:
     - unused        # 未使用コード
     - whitespace    # if,for前後の不要な改行
   disable:
+    - dupl          # 重複コード
     - funlen        # 関数の行数
   settings:
     errcheck:
