@@ -143,11 +143,16 @@ func toPullRequestSummary(pullRequest *github.PullRequest) *mygithub.PullRequest
 	for _, label := range pullRequest.Labels {
 		labels = append(labels, label.GetName())
 	}
+	assignees := make([]string, 0, len(pullRequest.Assignees))
+	for _, assignee := range pullRequest.Assignees {
+		assignees = append(assignees, assignee.GetLogin())
+	}
 	return &mygithub.PullRequestSummary{
 		Number:    pullRequest.GetNumber(),
 		Author:    pullRequest.GetUser().GetLogin(),
 		CreatedAt: pullRequest.GetCreatedAt().Time,
 		Labels:    labels,
+		Assignees: assignees,
 		HTMLURL:   pullRequest.GetHTMLURL(),
 	}
 }

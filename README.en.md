@@ -15,7 +15,8 @@ ghrev approval \
   --from <YYYYMMDD> \
   --to <YYYYMMDD> \
   --required-approvals <N> \
-  --ignore-labels <label1,label2,...>
+  --ignore-labels <label1,label2,...> \
+  --assignees <user1,user2,...>
 ```
 
 | Option | Required | Description |
@@ -26,6 +27,7 @@ ghrev approval \
 | `--to` | ✓ | End date of aggregation (`YYYYMMDD` format) |
 | `--required-approvals` | ✓ | Number of approvals required to consider a review complete (integer ≥ 1) |
 | `--ignore-labels` |   | Labels to exclude from aggregation (comma-separated) |
+| `--assignees` |   | Include only PRs that have any of the specified assignees (comma-separated) |
 
 ### `first-review`
 For PRs created within the specified period, aggregates how long it took from PR open until the first review reaction (any of approve / changes_requested / commented). DISMISSED reviews, bot reviews, and self-reviews by the PR author are not counted as reactions.
@@ -35,7 +37,8 @@ ghrev first-review \
   --name <repository> \
   --from <YYYYMMDD> \
   --to <YYYYMMDD> \
-  --ignore-labels <label1,label2,...>
+  --ignore-labels <label1,label2,...> \
+  --assignees <user1,user2,...>
 ```
 
 | Option | Required | Description |
@@ -45,6 +48,7 @@ ghrev first-review \
 | `--from` | ✓ | Start date of aggregation (`YYYYMMDD` format) |
 | `--to` | ✓ | End date of aggregation (`YYYYMMDD` format) |
 | `--ignore-labels` |   | Labels to exclude from aggregation (comma-separated) |
+| `--assignees` |   | Include only PRs that have any of the specified assignees (comma-separated) |
 
 ### `help`
 Shows help for the available subcommands.
