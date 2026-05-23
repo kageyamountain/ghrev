@@ -24,6 +24,7 @@ func (a Assignee) String() string {
 type Assignees []Assignee
 
 func ParseAssignees(v string) (Assignees, error) {
+	v = strings.Trim(v, ", ")
 	if v == "" {
 		return Assignees{}, nil
 	}
