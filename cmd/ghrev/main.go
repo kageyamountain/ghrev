@@ -32,13 +32,13 @@ func main() {
 func run() int {
 	ctx := context.Background()
 
-	// LogContextMapの設定
+	// LogContextの設定
 	executionID := uuid.New().String()
-	logContextMap := logger.NewLogContextMap()
-	logContextMap.Store("log_type", logger.LogTypeApp)
-	logContextMap.Store("execution_id", executionID)
-	logContextMap.Store("args", os.Args)
-	ctx = logger.WithLogContextMap(ctx, logContextMap)
+	logContext := logger.NewLogContext()
+	logContext.Set("log_type", logger.LogTypeApp)
+	logContext.Set("execution_id", executionID)
+	logContext.Set("args", os.Args)
+	ctx = logger.WithLogContext(ctx, logContext)
 
 	// logger設定
 	customLogHandler := logger.NewCustomLogHandler(
