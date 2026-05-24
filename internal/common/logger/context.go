@@ -21,11 +21,17 @@ func (l *LogContext) Set(key string, value any) {
 	l.attributes[key] = value
 }
 
-// ForEach 全属性を列挙する。読み出し中は書き込みがブロックされ、列挙はatomic snapshotとなる
+// ForEach 全属性を列挙する。列挙はatomic snapshotとなる
 func (l *LogContext) ForEach(fn func(key string, value any)) {
+	// コールバック内でSetが呼ばれても自己デッドロックしないためにattributesをコピーする
 	l.mutex.RLock()
-	defer l.mutex.RUnlock()
+	attributes := make(map[string]any, len(l.attributes))
 	for key, value := range l.attributes {
+		attributes[key] = value
+	}
+	l.mutex.RUnlock()
+
+	for key, value := range attributes {
 		fn(key, value)
 	}
 }
