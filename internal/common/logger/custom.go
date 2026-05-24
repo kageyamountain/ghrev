@@ -15,20 +15,30 @@ func NewCustomLogHandler(handler slog.Handler) *CustomLogHandler {
 	}
 }
 
-// Handle contextにセットされたLogContextMapからログ出力フィールドを追加する
+// Handle contextにセットされたLogContextからログ出力フィールドを追加する
 func (h *CustomLogHandler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
-	logContextMap, ok := LogContextMapFromContext(ctx)
+	logContext, ok := LogContextFromContext(ctx)
 	if !ok {
 		return h.Handler.Handle(ctx, r)
 	}
 
 	r = r.Clone()
-	for key, value := range logContextMap.Range {
-		keyStr, ok2 := key.(string)
-		if ok2 {
-			r.AddAttrs(slog.Any(keyStr, value))
+
+	// 呼び出し元で明示的にセットされたキーを記録し、LogContextに同名キーがある場合はスキップする
+	// （呼び出し元の値がLogContextより優先される）
+	existing := make(map[string]struct{})
+	r.Attrs(func(a slog.Attr) bool {
+		existing[a.Key] = struct{}{}
+		return true
+	})
+
+	logContext.ForEach(func(key string, value any) {
+		_, found := existing[key]
+		if found {
+			return
 		}
-	}
+		r.AddAttrs(slog.Any(key, value))
+	})
 
 	// info: OpenTelemetryと連携する場合は有効化
 	//// OpenTelemetry trace情報を追加
