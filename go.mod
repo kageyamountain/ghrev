@@ -5,7 +5,7 @@ go 1.26.3
 tool github.com/matryer/moq
 
 require (
-	github.com/cli/go-gh/v2 v2.13.0
+	github.com/cli/go-gh/v2 v2.16.0
 	github.com/google/go-github/v80 v80.0.0
 	github.com/google/uuid v1.6.0
 	golang.org/x/oauth2 v0.36.0
@@ -13,7 +13,7 @@ require (
 )
 
 require (
-	github.com/cli/safeexec v1.0.0 // indirect
+	github.com/cli/safeexec v1.0.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/matryer/moq v0.5.3 // indirect
