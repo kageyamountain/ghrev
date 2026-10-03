@@ -1,6 +1,9 @@
 package mygithub
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // PullRequestSummary はレビュー情報を持たない PR の概要を表す。
 // 期間／ラベルなどメタデータだけで判定できるフィルタリングはこの型のメソッドで行う。
@@ -19,10 +22,11 @@ func (p *PullRequestSummary) IsCreatedWithin(from, to time.Time) bool {
 }
 
 // ContainsAnyLabel は targetLabels のいずれかに一致するラベルが付与されているかを返す。
+// GitHub のラベル名は大文字・小文字を区別しないため、区別せずに照合する。
 func (p *PullRequestSummary) ContainsAnyLabel(targetLabels []string) bool {
 	for _, prLabel := range p.Labels {
 		for _, target := range targetLabels {
-			if prLabel == target {
+			if strings.EqualFold(prLabel, target) {
 				return true
 			}
 		}
@@ -31,9 +35,10 @@ func (p *PullRequestSummary) ContainsAnyLabel(targetLabels []string) bool {
 }
 
 // IsAuthoredByAny は Author が targetAuthors のいずれかに一致するかを返す。
+// GitHub のログイン名は大文字・小文字を区別しないため、区別せずに照合する。
 func (p *PullRequestSummary) IsAuthoredByAny(targetAuthors []string) bool {
 	for _, target := range targetAuthors {
-		if p.Author == target {
+		if strings.EqualFold(p.Author, target) {
 			return true
 		}
 	}
@@ -41,10 +46,11 @@ func (p *PullRequestSummary) IsAuthoredByAny(targetAuthors []string) bool {
 }
 
 // HasAnyAssignee は targetAssignees のいずれかに一致する assignee が PR に設定されているかを返す。
+// GitHub のログイン名は大文字・小文字を区別しないため、区別せずに照合する。
 func (p *PullRequestSummary) HasAnyAssignee(targetAssignees []string) bool {
 	for _, prAssignee := range p.Assignees {
 		for _, target := range targetAssignees {
-			if prAssignee == target {
+			if strings.EqualFold(prAssignee, target) {
 				return true
 			}
 		}
