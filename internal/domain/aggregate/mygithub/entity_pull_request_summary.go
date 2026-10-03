@@ -30,6 +30,16 @@ func (p *PullRequestSummary) ContainsAnyLabel(targetLabels []string) bool {
 	return false
 }
 
+// IsAuthoredByAny は Author が targetAuthors のいずれかに一致するかを返す。
+func (p *PullRequestSummary) IsAuthoredByAny(targetAuthors []string) bool {
+	for _, target := range targetAuthors {
+		if p.Author == target {
+			return true
+		}
+	}
+	return false
+}
+
 // HasAnyAssignee は targetAssignees のいずれかに一致する assignee が PR に設定されているかを返す。
 func (p *PullRequestSummary) HasAnyAssignee(targetAssignees []string) bool {
 	for _, prAssignee := range p.Assignees {

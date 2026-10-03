@@ -15,6 +15,7 @@ type RuntimeOptions struct {
 	CreatedAtTo       time.Time
 	IgnoreLabels      []string
 	Assignees         []string
+	Authors           []string
 	RequiredApprovals int
 }
 
@@ -26,6 +27,7 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 	createdAtToFlag := flagSet.String(globaloption.OptionNameCreatedAtTo, "", "pull request's created at to")
 	ignoreLabelsFlag := flagSet.String(globaloption.OptionNameIgnoreLabels, "", "ignore labels")
 	assigneesFlag := flagSet.String(globaloption.OptionNameAssignees, "", "filter PRs by assignees")
+	authorsFlag := flagSet.String(globaloption.OptionNameAuthors, "", "filter PRs by authors")
 	requiredApprovalsFlag := flagSet.Int(OptionNameRequiredApprovals, 0, "number of approvals required to complete review")
 	err := flagSet.Parse(optionArgs)
 	if err != nil {
@@ -62,6 +64,11 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 		return nil, err
 	}
 
+	authors, err := globaloption.ParseAuthors(*authorsFlag)
+	if err != nil {
+		return nil, err
+	}
+
 	requiredApprovals, err := ParseRequiredApprovals(*requiredApprovalsFlag)
 	if err != nil {
 		return nil, err
@@ -74,6 +81,7 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 		CreatedAtTo:       createdAtTo.Time(),
 		IgnoreLabels:      ignoreLabels.Strings(),
 		Assignees:         assignees.Strings(),
+		Authors:           authors.Strings(),
 		RequiredApprovals: requiredApprovals.Int(),
 	}, nil
 }
