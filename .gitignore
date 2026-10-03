@@ -3,3 +3,11 @@
 
 # Claude Code
 .claude/settings.local.json
+
+# JetBrains
+.idea/*
+!.idea/runConfigurations/
+*.iml
+*.iws
+*.ipr
+modules.xml
