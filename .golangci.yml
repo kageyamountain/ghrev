@@ -26,6 +26,7 @@ linters:
     - protogetter   # gRPCのproto messageの直接アクセス
     - revive        # golintの後継
     - rowserrcheck  # database/sqlのRowsエラーチェック
+    - sloglint      # log/slogの書き方の統一
     - sqlclosecheck # sql.Rowsやsql.Stmtのclose
     - staticcheck   # 静的解析
     - thelper       # t.Helper()
@@ -51,6 +52,11 @@ linters:
         - paramTypeCombine
     gocyclo:
       min-complexity: 15
+    sloglint:
+      attr-only: true        # 属性のslog.Attr形式を強制
+      context: all           # InfoContext等のContext付き関数を強制
+      static-msg: true       # メッセージの固定文字列を強制
+      key-naming-case: snake # キー名のsnake_caseを強制
     govet:
       enable-all: true
       disable:
