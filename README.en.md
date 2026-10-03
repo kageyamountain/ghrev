@@ -66,6 +66,16 @@ Shows the ghrev version.
 ghrev version
 ```
 
+## Output
+Each subcommand prints one space-separated line per target PR.
+```
+URL 所要時間 変更行数 コメント数
+https://github.com/owner/repo/pull/123 16.74時間 +120/-35 7
+```
+- 所要時間 (elapsed time): elapsed hours excluding JST weekends
+- 変更行数 (changed lines): `+additions/-deletions`
+- コメント数 (comments): total of review comments (inline) and conversation comments, excluding bots. Review bodies (e.g. a note on approve) are not counted
+
 ## Setup
 `ghrev` calls the GitHub API and therefore requires credentials. Authentication is automatically picked up from the [GitHub CLI (`gh`)](https://cli.github.com/) login session.
 Before using `ghrev`, please do the following.

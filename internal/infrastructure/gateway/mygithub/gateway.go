@@ -79,13 +79,69 @@ func (g *gateway) FindPullRequestDetail(ctx context.Context, owner, name string,
 		return nil, err
 	}
 
+	humanComments, err := g.countHumanComments(ctx, owner, name, summary.Number)
+	if err != nil {
+		return nil, err
+	}
+
 	return mygithub.NewPullRequestDetail(
 		summary,
 		events,
 		reviews,
 		pullRequest.GetAdditions(),
 		pullRequest.GetDeletions(),
+		humanComments,
 	), nil
+}
+
+// countHumanComments はレビューコメント（インライン）と会話コメントを取得し、bot 投稿を除いた件数を返す。
+// PullRequests.Get が返す comments / review_comments は CodeRabbit 等の bot 分を含むため、件数だけでは使えず個別に取得する。
+func (g *gateway) countHumanComments(ctx context.Context, owner, name string, number int) (int, error) {
+	count := 0
+
+	reviewCommentOptions := &github.PullRequestListCommentsOptions{
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+	for {
+		comments, response, err := g.githubClient.PullRequests.ListComments(ctx, owner, name, number, reviewCommentOptions)
+		if err != nil {
+			return 0, err
+		}
+		for _, comment := range comments {
+			if comment.GetUser().GetType() == "Bot" {
+				continue
+			}
+			count++
+		}
+
+		if response.NextPage == 0 {
+			break
+		}
+		reviewCommentOptions.Page = response.NextPage
+	}
+
+	issueCommentOptions := &github.IssueListCommentsOptions{
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+	for {
+		comments, response, err := g.githubClient.Issues.ListComments(ctx, owner, name, number, issueCommentOptions)
+		if err != nil {
+			return 0, err
+		}
+		for _, comment := range comments {
+			if comment.GetUser().GetType() == "Bot" {
+				continue
+			}
+			count++
+		}
+
+		if response.NextPage == 0 {
+			break
+		}
+		issueCommentOptions.Page = response.NextPage
+	}
+
+	return count, nil
 }
 
 func (g *gateway) findIssueEvents(ctx context.Context, owner, name string, number int) (mygithub.IssueEvents, error) {

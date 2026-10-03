@@ -14,17 +14,21 @@ type PullRequestDetail struct {
 	reviews       Reviews
 	Additions     int
 	Deletions     int
+	// HumanComments は bot を除いたレビューコメント（インライン）と会話コメントの合計件数。
+	// レビューの盛り上がり度合いを見るための補助指標であり、レビュー本文（approve 時の一言等）は含めない。
+	HumanComments int
 }
 
 // NewPullRequestDetail は summary に events と reviews を取り込んだ PullRequestDetail を返す。
 // FirstOpenedAt（PR が初めてレビュー可能になった日時）は events と summary.CreatedAt からここで導出する。
-func NewPullRequestDetail(summary *PullRequestSummary, events IssueEvents, reviews Reviews, additions, deletions int) *PullRequestDetail {
+func NewPullRequestDetail(summary *PullRequestSummary, events IssueEvents, reviews Reviews, additions, deletions, humanComments int) *PullRequestDetail {
 	return &PullRequestDetail{
 		PullRequestSummary: *summary,
 		FirstOpenedAt:      events.FirstOpenedAt(summary.CreatedAt),
 		reviews:            reviews,
 		Additions:          additions,
 		Deletions:          deletions,
+		HumanComments:      humanComments,
 	}
 }
 
