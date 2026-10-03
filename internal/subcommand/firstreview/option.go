@@ -15,6 +15,7 @@ type RuntimeOptions struct {
 	CreatedAtTo   time.Time
 	IgnoreLabels  []string
 	Assignees     []string
+	Authors       []string
 }
 
 func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
@@ -25,6 +26,7 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 	createdAtToFlag := flagSet.String(globaloption.OptionNameCreatedAtTo, "", "pull request's created at to")
 	ignoreLabelsFlag := flagSet.String(globaloption.OptionNameIgnoreLabels, "", "ignore labels")
 	assigneesFlag := flagSet.String(globaloption.OptionNameAssignees, "", "filter PRs by assignees")
+	authorsFlag := flagSet.String(globaloption.OptionNameAuthors, "", "filter PRs by authors")
 	err := flagSet.Parse(optionArgs)
 	if err != nil {
 		return nil, err
@@ -60,6 +62,11 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 		return nil, err
 	}
 
+	authors, err := globaloption.ParseAuthors(*authorsFlag)
+	if err != nil {
+		return nil, err
+	}
+
 	return &RuntimeOptions{
 		Owner:         repositoryOwner.String(),
 		Name:          repositoryName.String(),
@@ -67,5 +74,6 @@ func NewRuntimeOptions(optionArgs []string) (*RuntimeOptions, error) {
 		CreatedAtTo:   createdAtTo.Time(),
 		IgnoreLabels:  ignoreLabels.Strings(),
 		Assignees:     assignees.Strings(),
+		Authors:       authors.Strings(),
 	}, nil
 }

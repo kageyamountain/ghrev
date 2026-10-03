@@ -16,7 +16,8 @@ ghrev approval \
   --to <YYYYMMDD> \
   --required-approvals <N> \
   --ignore-labels <label1,label2,...> \
-  --assignees <user1,user2,...>
+  --assignees <user1,user2,...> \
+  --authors <user1,user2,...>
 ```
 
 | オプション | 必須 | 説明 |
@@ -28,6 +29,7 @@ ghrev approval \
 | `--required-approvals` | ✓ | レビュー完了とみなす Approve の件数(1 以上の整数) |
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
 | `--assignees` |   | 指定した assignee のいずれかが設定されている PR のみを集計対象にする(カンマ区切り) |
+| `--authors` |   | 指定したユーザーのいずれかが作成した PR のみを集計対象にする(カンマ区切り) |
 
 ### `first-review`
 指定期間内に作成された PR を対象に、PR オープンから最初のレビュー反応(approve / changes_requested / commented のいずれか)までにかかった時間を集計します。DISMISSED されたレビュー、bot のレビュー、PR 作成者自身のレビューは反応とみなしません。
@@ -38,7 +40,8 @@ ghrev first-review \
   --from <YYYYMMDD> \
   --to <YYYYMMDD> \
   --ignore-labels <label1,label2,...> \
-  --assignees <user1,user2,...>
+  --assignees <user1,user2,...> \
+  --authors <user1,user2,...>
 ```
 
 | オプション | 必須 | 説明 |
@@ -49,6 +52,7 @@ ghrev first-review \
 | `--to` | ✓ | 集計終了日(`YYYYMMDD` 形式) |
 | `--ignore-labels` |   | 集計対象から除外するラベル(カンマ区切り) |
 | `--assignees` |   | 指定した assignee のいずれかが設定されている PR のみを集計対象にする(カンマ区切り) |
+| `--authors` |   | 指定したユーザーのいずれかが作成した PR のみを集計対象にする(カンマ区切り) |
 
 ### `help`
 利用可能なサブコマンドのヘルプを表示します。
@@ -61,6 +65,16 @@ ghrevのバージョンを表示します。
 ```sh
 ghrev version
 ```
+
+## 出力
+各サブコマンドは対象 PR ごとに以下をスペース区切りで1行出力します。
+```
+URL 所要時間 変更行数 コメント数
+https://github.com/owner/repo/pull/123 16.74時間 +120/-35 7
+```
+- 所要時間: JST 基準の土日を除外した経過時間
+- 変更行数: `+追加行数/-削除行数`
+- コメント数: bot を除いたレビューコメント(インライン)と会話コメントの合計。レビュー本文(approve 時の一言等)は含みません
 
 ## セットアップ
 `ghrev` は GitHub の API を呼び出すため、認証情報を必要とします。認証は [GitHub CLI (`gh`)](https://cli.github.com/) のログインセッションから自動で取得します。

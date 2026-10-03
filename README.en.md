@@ -16,7 +16,8 @@ ghrev approval \
   --to <YYYYMMDD> \
   --required-approvals <N> \
   --ignore-labels <label1,label2,...> \
-  --assignees <user1,user2,...>
+  --assignees <user1,user2,...> \
+  --authors <user1,user2,...>
 ```
 
 | Option | Required | Description |
@@ -28,6 +29,7 @@ ghrev approval \
 | `--required-approvals` | ✓ | Number of approvals required to consider a review complete (integer ≥ 1) |
 | `--ignore-labels` |   | Labels to exclude from aggregation (comma-separated) |
 | `--assignees` |   | Include only PRs that have any of the specified assignees (comma-separated) |
+| `--authors` |   | Include only PRs created by any of the specified users (comma-separated) |
 
 ### `first-review`
 For PRs created within the specified period, aggregates how long it took from PR open until the first review reaction (any of approve / changes_requested / commented). DISMISSED reviews, bot reviews, and self-reviews by the PR author are not counted as reactions.
@@ -38,7 +40,8 @@ ghrev first-review \
   --from <YYYYMMDD> \
   --to <YYYYMMDD> \
   --ignore-labels <label1,label2,...> \
-  --assignees <user1,user2,...>
+  --assignees <user1,user2,...> \
+  --authors <user1,user2,...>
 ```
 
 | Option | Required | Description |
@@ -49,6 +52,7 @@ ghrev first-review \
 | `--to` | ✓ | End date of aggregation (`YYYYMMDD` format) |
 | `--ignore-labels` |   | Labels to exclude from aggregation (comma-separated) |
 | `--assignees` |   | Include only PRs that have any of the specified assignees (comma-separated) |
+| `--authors` |   | Include only PRs created by any of the specified users (comma-separated) |
 
 ### `help`
 Shows help for the available subcommands.
@@ -61,6 +65,16 @@ Shows the ghrev version.
 ```sh
 ghrev version
 ```
+
+## Output
+Each subcommand prints one space-separated line per target PR.
+```
+URL 所要時間 変更行数 コメント数
+https://github.com/owner/repo/pull/123 16.74時間 +120/-35 7
+```
+- 所要時間 (elapsed time): elapsed hours excluding JST weekends
+- 変更行数 (changed lines): `+additions/-deletions`
+- コメント数 (comments): total of review comments (inline) and conversation comments, excluding bots. Review bodies (e.g. a note on approve) are not counted
 
 ## Setup
 `ghrev` calls the GitHub API and therefore requires credentials. Authentication is automatically picked up from the [GitHub CLI (`gh`)](https://cli.github.com/) login session.

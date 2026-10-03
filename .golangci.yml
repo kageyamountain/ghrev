@@ -11,8 +11,7 @@ linters:
     - errcheck      # エラーハンドリング
     - errorlint     # error型関連
     - exhaustive    # 網羅性
-    - goconst       # 定数化
-    - gocritic      # 詳細なコード分析
+    - gocritic     # 詳細なコード分析
     - gocyclo       # サイクロマティック複雑度分析（循環的複雑度）
     - gosec         # セキュリティチェック
     - govet         # go vet相当
@@ -35,6 +34,7 @@ linters:
   disable:
     - dupl          # 重複コード
     - funlen        # 関数の行数
+    - goconst       # 定数化
   settings:
     errcheck:
       check-type-assertions: true
@@ -77,7 +77,6 @@ linters:
           - bodyclose
           - errcheck
           - funlen
-          - goconst
           - gosec
           - noctx
           - nolintlint

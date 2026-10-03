@@ -61,7 +61,7 @@ func (u *UseCase) Do(ctx context.Context) error {
 			continue
 		}
 		if !header {
-			fmt.Println("URL 所要時間 変更行数")
+			fmt.Println("URL 所要時間 変更行数 コメント数")
 			header = true
 		}
 		fmt.Println(resultRow)
@@ -88,6 +88,12 @@ func (u *UseCase) measureApprovalTime(ctx context.Context, summary *mygithub.Pul
 		}
 	}
 
+	if len(u.runtimeOptions.Authors) > 0 {
+		if !summary.IsAuthoredByAny(u.runtimeOptions.Authors) {
+			return "", nil
+		}
+	}
+
 	detail, err := u.githubGateway.FindPullRequestDetail(ctx, u.runtimeOptions.Owner, u.runtimeOptions.Name, summary)
 	if err != nil {
 		return "", fmt.Errorf("find pull request detail (PR #%d): %w", summary.Number, err)
@@ -98,5 +104,5 @@ func (u *UseCase) measureApprovalTime(ctx context.Context, summary *mygithub.Pul
 		return "", nil
 	}
 
-	return fmt.Sprintf("%s %.2f時間 +%d/-%d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions), nil
+	return fmt.Sprintf("%s %.2f時間 +%d/-%d %d", detail.HTMLURL, duration.Hours(), detail.Additions, detail.Deletions, detail.HumanComments), nil
 }
