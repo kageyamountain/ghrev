@@ -32,16 +32,8 @@ func main() {
 func run() int {
 	ctx := context.Background()
 
-	// LogContextの設定
-	executionID := uuid.New().String()
-	logContext := logger.NewLogContext()
-	logContext.Set("log_type", logger.LogTypeApp)
-	logContext.Set("execution_id", executionID)
-	logContext.Set("args", os.Args)
-	ctx = logger.WithLogContext(ctx, logContext)
-
-	// logger設定
-	customLogHandler := logger.NewCustomLogHandler(
+	// loggerの設定
+	logHandler := logger.NewHandler(
 		slog.NewJSONHandler(
 			os.Stdout,
 			&slog.HandlerOptions{
@@ -49,7 +41,13 @@ func run() int {
 			},
 		),
 	)
-	slog.SetDefault(slog.New(customLogHandler))
+	slog.SetDefault(slog.New(logHandler))
+
+	ctx = logger.InitLogContext(ctx)
+	logger.SetAttr(ctx, slog.String(logger.AttrKeyLogType, logger.LogTypeApp))
+	logger.SetAttr(ctx, slog.String("execution_id", uuid.New().String()))
+	logger.SetAttr(ctx, slog.Any("args", os.Args))
+
 	slog.InfoContext(ctx, "process started")
 
 	// 最小限のバリデーション
@@ -61,7 +59,7 @@ func run() int {
 	// サブコマンド名を取得
 	subCommandName, err := subcommand.ParseName(os.Args[1])
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to parse subcommand", slog.Any("error", err))
+		slog.ErrorContext(ctx, "failed to parse subcommand", slog.Any(logger.AttrKeyError, err))
 		return 1
 	}
 
@@ -69,14 +67,14 @@ func run() int {
 	optionArgs := os.Args[2:]
 	useCase, err := buildUseCase(ctx, subCommandName, optionArgs)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get use case", slog.Any("error", err))
+		slog.ErrorContext(ctx, "failed to get use case", slog.Any(logger.AttrKeyError, err))
 		return 1
 	}
 
 	// ユースケース実行
 	err = useCase.Do(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to do use case", slog.Any("error", err))
+		slog.ErrorContext(ctx, "failed to do use case", slog.Any(logger.AttrKeyError, err))
 		return 1
 	}
 
@@ -93,7 +91,7 @@ func buildUseCase(ctx context.Context, subCommandName subcommand.Name, optionArg
 	if ghAuthToken == "" {
 		return nil, errors.New("failed to get github token. `gh auth login` is required")
 	}
-	slog.InfoContext(ctx, "github token resolved", slog.Any("source", source))
+	slog.InfoContext(ctx, "github token resolved", slog.String("token_source", source))
 
 	tokenSource := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: ghAuthToken},
