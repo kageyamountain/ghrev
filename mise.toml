@@ -1,4 +1,6 @@
+[settings]
+idiomatic_version_file_enable_tools = ["go"]
+
 [tools]
 act = "latest"
-go = "1.26.3"
 task = "latest"

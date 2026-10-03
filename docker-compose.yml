@@ -13,7 +13,6 @@ services:
     volumes:
       - .:/app
     ports:
-      - "8080:8080" # アプリケーション用ポート
       - "2345:2345" # delveリモートデバッグ用ポート
     stdin_open: true
     tty: true
