@@ -1,12 +1,20 @@
-FROM golang:1.27.1-alpine AS dev
+# Goのバージョンは.go-versionで管理するため、ベースイメージでは固定しない
+FROM golang:alpine AS dev
 RUN apk add --no-cache \
     tzdata \
     curl \
     gcc \
     musl-dev \
     git
-RUN curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.12.2
-RUN go install github.com/go-delve/delve/cmd/dlv@latest
+# golang imageが設定する環境変数GOTOOLCHAIN=localは、go env -wの設定より優先されるため空にする
+ENV GOTOOLCHAIN=
 WORKDIR /app
+COPY .go-version ./
+RUN go env -w GOTOOLCHAIN="go$(cat .go-version)"
+# toolchainをビルド時に取得しておく
+RUN go version
+COPY .golangci-lint-version ./
+RUN curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(go env GOPATH)/bin "$(cat .golangci-lint-version)"
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 COPY go.mod go.sum ./
 RUN go mod download
