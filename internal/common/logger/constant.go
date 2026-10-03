@@ -1,8 +1,11 @@
 package logger
 
-type LogType string
+const (
+	AttrKeyLogType string = "log_type"
+	AttrKeyError   string = "error"
+)
 
 const (
-	LogTypeApp    LogType = "app_log"
-	LogTypeAccess LogType = "access_log"
+	LogTypeApp    string = "app_log"
+	LogTypeAccess string = "access_log"
 )

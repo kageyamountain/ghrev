@@ -2,58 +2,59 @@ package logger
 
 import (
 	"context"
+	"log/slog"
+	"slices"
 	"sync"
 )
 
-type LogContext struct {
-	mutex      sync.RWMutex
-	attributes map[string]any
-}
-
-func NewLogContext() *LogContext {
-	return &LogContext{attributes: map[string]any{}}
-}
-
-// Set 属性を追加・更新する
-func (l *LogContext) Set(key string, value any) {
-	l.mutex.Lock()
-	defer l.mutex.Unlock()
-	l.attributes[key] = value
-}
-
-// ForEach 全属性を列挙する。列挙はatomic snapshotとなる
-func (l *LogContext) ForEach(fn func(key string, value any)) {
-	// コールバック内でSetが呼ばれても自己デッドロックしないためにattributesをコピーする
-	l.mutex.RLock()
-	attributes := make(map[string]any, len(l.attributes))
-	for key, value := range l.attributes {
-		attributes[key] = value
-	}
-	l.mutex.RUnlock()
-
-	for key, value := range attributes {
-		fn(key, value)
-	}
+type logContext struct {
+	mutex sync.RWMutex
+	attrs []slog.Attr
 }
 
 type logContextKey struct{}
 
-// WithLogContext LogContextをセットしたcontextを返す
-func WithLogContext(ctx context.Context, logContext *LogContext) context.Context {
-	return context.WithValue(ctx, logContextKey{}, logContext)
+// InitLogContext 空のlogContextをセットしたcontextを返す。
+func InitLogContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, logContextKey{}, &logContext{})
 }
 
-// LogContextFromContext contextからLogContextを取り出す
-func LogContextFromContext(ctx context.Context) (*LogContext, bool) {
-	logContext, ok := ctx.Value(logContextKey{}).(*LogContext)
-	return logContext, ok
-}
-
-// SetLogContextAttribute contextに紐づくLogContextに属性を追加する。
-// LogContextが未設定の場合は何もしない
-func SetLogContextAttribute(ctx context.Context, key string, value any) {
-	logContext, ok := LogContextFromContext(ctx)
-	if ok {
-		logContext.Set(key, value)
+// SetAttr logContextに属性をセットする。同名キーは上書きする。
+func SetAttr(ctx context.Context, attr slog.Attr) {
+	logContext, ok := ctx.Value(logContextKey{}).(*logContext)
+	if !ok {
+		return
 	}
+
+	logContext.mutex.Lock()
+	defer logContext.mutex.Unlock()
+
+	for i := range logContext.attrs {
+		if logContext.attrs[i].Key == attr.Key {
+			logContext.attrs[i] = attr
+			return
+		}
+	}
+	logContext.attrs = append(logContext.attrs, attr)
+}
+
+// ForkLogContext logContextを複製した新しいcontextを返す。
+// 以降にセットする属性を、呼び出し元や並行する処理のログに出したくないときに使う。
+func ForkLogContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, logContextKey{}, &logContext{
+		attrs: attrsFromContext(ctx),
+	})
+}
+
+// attrsFromContext logContextが持つ属性のコピーを返す。
+func attrsFromContext(ctx context.Context) []slog.Attr {
+	logContext, ok := ctx.Value(logContextKey{}).(*logContext)
+	if !ok {
+		return nil
+	}
+
+	logContext.mutex.RLock()
+	defer logContext.mutex.RUnlock()
+
+	return slices.Clone(logContext.attrs)
 }
