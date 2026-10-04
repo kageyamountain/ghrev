@@ -17,7 +17,7 @@ func TestSetAttribute(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		parent := InitLogContext(context.Background())
+		parent := InitAttributes(context.Background())
 		child := context.WithValue(parent, otherContextKey{}, "x")
 		want := []slog.Attr{slog.Int(keyPRNumber, 1)}
 
@@ -25,7 +25,7 @@ func TestSetAttribute(t *testing.T) {
 		SetAttribute(child, slog.Int(keyPRNumber, 1))
 
 		// Assert
-		got := logContextAttributesFromContext(parent)
+		got := logAttributesFromContext(parent)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %v, want %v", got, want)
 		}
@@ -35,7 +35,7 @@ func TestSetAttribute(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		ctx := InitLogContext(context.Background())
+		ctx := InitAttributes(context.Background())
 		SetAttribute(ctx, slog.String(keyRepository, "r1"))
 		SetAttribute(ctx, slog.Int(keyPRNumber, 1))
 		want := []slog.Attr{slog.String(keyRepository, "r2"), slog.Int(keyPRNumber, 1)}
@@ -44,13 +44,13 @@ func TestSetAttribute(t *testing.T) {
 		SetAttribute(ctx, slog.String(keyRepository, "r2"))
 
 		// Assert
-		got := logContextAttributesFromContext(ctx)
+		got := logAttributesFromContext(ctx)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 
-	t.Run("正常系: logContextが未設定の場合、何もセットされないこと", func(t *testing.T) {
+	t.Run("正常系: ログ属性が未設定の場合、何もセットされないこと", func(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
@@ -60,46 +60,46 @@ func TestSetAttribute(t *testing.T) {
 		SetAttribute(ctx, slog.Int(keyPRNumber, 1))
 
 		// Assert
-		got := logContextAttributesFromContext(ctx)
+		got := logAttributesFromContext(ctx)
 		if got != nil {
 			t.Errorf("got %v, want nil", got)
 		}
 	})
 }
 
-func TestForkLogContext(t *testing.T) {
+func TestForkAttributes(t *testing.T) {
 	t.Parallel()
 
-	t.Run("正常系: ForkLogContextした場合、親の属性を引き継ぎ、子でセットした属性は親に反映されないこと", func(t *testing.T) {
+	t.Run("正常系: ForkAttributesした場合、親の属性を引き継ぎ、子でセットした属性は親に反映されないこと", func(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
-		parent := InitLogContext(context.Background())
+		parent := InitAttributes(context.Background())
 		SetAttribute(parent, slog.String(keyRepository, "r1"))
 		wantParent := []slog.Attr{slog.String(keyRepository, "r1")}
 		wantChild := []slog.Attr{slog.String(keyRepository, "r1"), slog.Int(keyPRNumber, 1)}
 
 		// Act
-		child := ForkLogContext(parent)
+		child := ForkAttributes(parent)
 		SetAttribute(child, slog.Int(keyPRNumber, 1))
 
 		// Assert
-		gotParent := logContextAttributesFromContext(parent)
+		gotParent := logAttributesFromContext(parent)
 		if !reflect.DeepEqual(gotParent, wantParent) {
 			t.Errorf("parent: got %v, want %v", gotParent, wantParent)
 		}
-		gotChild := logContextAttributesFromContext(child)
+		gotChild := logAttributesFromContext(child)
 		if !reflect.DeepEqual(gotChild, wantChild) {
 			t.Errorf("child: got %v, want %v", gotChild, wantChild)
 		}
 	})
 
-	t.Run("正常系: goroutineごとにForkLogContextした場合、それぞれのcontextが自身の属性だけを持つこと", func(t *testing.T) {
+	t.Run("正常系: goroutineごとにForkAttributesした場合、それぞれのcontextが自身の属性だけを持つこと", func(t *testing.T) {
 		t.Parallel()
 
 		// Arrange
 		const fanOut = 10
-		parent := InitLogContext(context.Background())
+		parent := InitAttributes(context.Background())
 		SetAttribute(parent, slog.String(keyRepository, "r1"))
 		got := make([][]slog.Attr, fanOut)
 
@@ -107,9 +107,9 @@ func TestForkLogContext(t *testing.T) {
 		var wg sync.WaitGroup
 		for i := range fanOut {
 			wg.Go(func() {
-				ctx := ForkLogContext(parent)
+				ctx := ForkAttributes(parent)
 				SetAttribute(ctx, slog.Int(keyPRNumber, i))
-				got[i] = logContextAttributesFromContext(ctx)
+				got[i] = logAttributesFromContext(ctx)
 			})
 		}
 		wg.Wait()

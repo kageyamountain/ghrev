@@ -36,7 +36,7 @@ func run() int {
 	logHandler := logger.NewHandler(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	slog.SetDefault(slog.New(logHandler))
 
-	ctx = logger.InitLogContext(ctx)
+	ctx = logger.InitAttributes(ctx)
 	logger.SetAttribute(ctx, slog.String(logger.AttributeKeyLogType, logger.LogTypeApp))
 	logger.SetAttribute(ctx, slog.String("execution_id", uuid.New().String()))
 	logger.SetAttribute(ctx, slog.Any("args", os.Args))
