@@ -41,12 +41,12 @@ func SetAttribute(ctx context.Context, attribute slog.Attr) {
 // ForkLogContext logContextを複製した新しいcontextを返す。
 func ForkLogContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, logContextKey{}, &logContext{
-		attributes: attributesFromContext(ctx),
+		attributes: logContextAttributesFromContext(ctx),
 	})
 }
 
-// attributesFromContext logContextが持つ属性のコピーを返す。
-func attributesFromContext(ctx context.Context) []slog.Attr {
+// logContextAttributesFromContext logContextが持つ属性のコピーを返す。
+func logContextAttributesFromContext(ctx context.Context) []slog.Attr {
 	logContext, ok := ctx.Value(logContextKey{}).(*logContext)
 	if !ok {
 		return nil

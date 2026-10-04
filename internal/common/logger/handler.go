@@ -24,7 +24,7 @@ func NewHandler(innerHandler slog.Handler) *Handler {
 
 // Handle logContextの属性をログに追加して、innerHandlerに渡す。
 func (h *Handler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
-	contextAttributes := attributesFromContext(ctx)
+	contextAttributes := logContextAttributesFromContext(ctx)
 	if len(contextAttributes) == 0 {
 		return h.innerHandler.Handle(ctx, r)
 	}
