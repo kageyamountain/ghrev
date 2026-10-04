@@ -33,14 +33,7 @@ func run() int {
 	ctx := context.Background()
 
 	// loggerの設定
-	logHandler := logger.NewHandler(
-		slog.NewJSONHandler(
-			os.Stdout,
-			&slog.HandlerOptions{
-				Level: slog.LevelError,
-			},
-		),
-	)
+	logHandler := logger.NewHandler(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	slog.SetDefault(slog.New(logHandler))
 
 	ctx = logger.InitLogContext(ctx)
