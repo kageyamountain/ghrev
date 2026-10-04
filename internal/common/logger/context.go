@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"slices"
 	"sync"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type logContext struct {
@@ -56,4 +58,17 @@ func logContextAttributesFromContext(ctx context.Context) []slog.Attr {
 	defer logContext.mutex.RUnlock()
 
 	return slices.Clone(logContext.attributes)
+}
+
+// traceAttributesFromContext contextに有効なspanがあれば、そのtrace_idとspan_idを属性として返す。
+func traceAttributesFromContext(ctx context.Context) []slog.Attr {
+	spanContext := trace.SpanContextFromContext(ctx)
+	if !spanContext.IsValid() {
+		return nil
+	}
+
+	return []slog.Attr{
+		slog.String("trace_id", spanContext.TraceID().String()),
+		slog.String("span_id", spanContext.SpanID().String()),
+	}
 }

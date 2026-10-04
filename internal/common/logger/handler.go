@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"log/slog"
+	"slices"
 )
 
 // Handler logContextを扱うためのslog.Handlerのラッパー。
@@ -22,14 +23,16 @@ func NewHandler(innerHandler slog.Handler) *Handler {
 	}
 }
 
-// Handle logContextの属性をログに追加して、innerHandlerに渡す。
+// Handle logContextの属性とtraceの属性をログに追加して、innerHandlerに渡す。
 func (h *Handler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
-	contextAttributes := logContextAttributesFromContext(ctx)
+	logContextAttributes := logContextAttributesFromContext(ctx)
+	traceAttributes := traceAttributesFromContext(ctx)
+	contextAttributes := slices.Concat(logContextAttributes, traceAttributes)
 	if len(contextAttributes) == 0 {
 		return h.innerHandler.Handle(ctx, r)
 	}
 
-	// ログ呼び出しの引数とlogContextに同じキーがある場合は、引数の値を優先してlogContextの属性を出力しない
+	// ログ呼び出しの引数とcontextの属性に同じキーがある場合は、引数の値を優先してcontextの属性を出力しない
 	argAttributeKeys := make(map[string]struct{}, r.NumAttrs())
 	for argAttribute := range r.Attrs {
 		argAttributeKeys[argAttribute.Key] = struct{}{}

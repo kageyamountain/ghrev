@@ -8,11 +8,15 @@ import (
 	"reflect"
 	"testing"
 	"testing/slogtest"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
 	keyRepository = "repository"
 	keyPRNumber   = "pr_number"
+	keyTraceID    = "trace_id"
+	keySpanID     = "span_id"
 	message       = "msg"
 )
 
@@ -122,6 +126,76 @@ func TestHandler_Handle(t *testing.T) {
 			t.Errorf("got %v, want %v", got[keyRepository], "r1")
 		}
 	})
+}
+
+func TestHandler_Handle_trace(t *testing.T) {
+	t.Parallel()
+
+	const (
+		traceID = "0102030405060708090a0b0c0d0e0f10"
+		spanID  = "0102030405060708"
+	)
+	spanContextConfig := trace.SpanContextConfig{
+		TraceID:    trace.TraceID{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SpanID:     trace.SpanID{1, 2, 3, 4, 5, 6, 7, 8},
+		TraceFlags: trace.FlagsSampled,
+	}
+
+	tests := []struct {
+		name    string
+		ctx     context.Context
+		argAttr []any
+		want    map[string]any
+	}{
+		{
+			name: "正常系: contextに有効なspanがある場合、trace_idとspan_idが出力されること",
+			ctx:  trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(spanContextConfig)),
+			want: map[string]any{keyTraceID: traceID, keySpanID: spanID},
+		},
+		{
+			name: "正常系: logContextとspanの両方がある場合、両方の属性が出力されること",
+			ctx: func() context.Context {
+				ctx := InitLogContext(context.Background())
+				SetAttribute(ctx, slog.String(keyRepository, "r1"))
+				return trace.ContextWithSpanContext(ctx, trace.NewSpanContext(spanContextConfig))
+			}(),
+			want: map[string]any{keyRepository: "r1", keyTraceID: traceID, keySpanID: spanID},
+		},
+		{
+			name: "正常系: ログ呼び出しの引数とtrace_idが同じキーの場合、引数の値が出力されること",
+			ctx:  trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(spanContextConfig)),
+			argAttr: []any{
+				slog.String(keyTraceID, "explicit"),
+			},
+			want: map[string]any{keyTraceID: "explicit", keySpanID: spanID},
+		},
+		{
+			name: "正常系: contextにspanがない場合、trace_idとspan_idは出力されないこと",
+			ctx:  context.Background(),
+			want: map[string]any{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Arrange
+			var buf bytes.Buffer
+			logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil)))
+
+			// Act
+			logger.InfoContext(tt.ctx, message, tt.argAttr...)
+
+			// Assert
+			got := decode(t, &buf)
+			for _, key := range []string{slog.TimeKey, slog.LevelKey, slog.MessageKey} {
+				delete(got, key)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func decode(t *testing.T, buf *bytes.Buffer) map[string]any {
