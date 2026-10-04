@@ -10,7 +10,7 @@ import (
 
 type otherContextKey struct{}
 
-func TestSetAttr(t *testing.T) {
+func TestSetAttribute(t *testing.T) {
 	t.Parallel()
 
 	t.Run("正常系: 派生させたcontextでセットした場合、親contextからも参照できること", func(t *testing.T) {
@@ -22,10 +22,10 @@ func TestSetAttr(t *testing.T) {
 		want := []slog.Attr{slog.Int(keyPRNumber, 1)}
 
 		// Act
-		SetAttr(child, slog.Int(keyPRNumber, 1))
+		SetAttribute(child, slog.Int(keyPRNumber, 1))
 
 		// Assert
-		got := attrsFromContext(parent)
+		got := attributesFromContext(parent)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %v, want %v", got, want)
 		}
@@ -36,15 +36,15 @@ func TestSetAttr(t *testing.T) {
 
 		// Arrange
 		ctx := InitLogContext(context.Background())
-		SetAttr(ctx, slog.String(keyRepository, "r1"))
-		SetAttr(ctx, slog.Int(keyPRNumber, 1))
+		SetAttribute(ctx, slog.String(keyRepository, "r1"))
+		SetAttribute(ctx, slog.Int(keyPRNumber, 1))
 		want := []slog.Attr{slog.String(keyRepository, "r2"), slog.Int(keyPRNumber, 1)}
 
 		// Act
-		SetAttr(ctx, slog.String(keyRepository, "r2"))
+		SetAttribute(ctx, slog.String(keyRepository, "r2"))
 
 		// Assert
-		got := attrsFromContext(ctx)
+		got := attributesFromContext(ctx)
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("got %v, want %v", got, want)
 		}
@@ -57,10 +57,10 @@ func TestSetAttr(t *testing.T) {
 		ctx := context.Background()
 
 		// Act
-		SetAttr(ctx, slog.Int(keyPRNumber, 1))
+		SetAttribute(ctx, slog.Int(keyPRNumber, 1))
 
 		// Assert
-		got := attrsFromContext(ctx)
+		got := attributesFromContext(ctx)
 		if got != nil {
 			t.Errorf("got %v, want nil", got)
 		}
@@ -75,20 +75,20 @@ func TestForkLogContext(t *testing.T) {
 
 		// Arrange
 		parent := InitLogContext(context.Background())
-		SetAttr(parent, slog.String(keyRepository, "r1"))
+		SetAttribute(parent, slog.String(keyRepository, "r1"))
 		wantParent := []slog.Attr{slog.String(keyRepository, "r1")}
 		wantChild := []slog.Attr{slog.String(keyRepository, "r1"), slog.Int(keyPRNumber, 1)}
 
 		// Act
 		child := ForkLogContext(parent)
-		SetAttr(child, slog.Int(keyPRNumber, 1))
+		SetAttribute(child, slog.Int(keyPRNumber, 1))
 
 		// Assert
-		gotParent := attrsFromContext(parent)
+		gotParent := attributesFromContext(parent)
 		if !reflect.DeepEqual(gotParent, wantParent) {
 			t.Errorf("parent: got %v, want %v", gotParent, wantParent)
 		}
-		gotChild := attrsFromContext(child)
+		gotChild := attributesFromContext(child)
 		if !reflect.DeepEqual(gotChild, wantChild) {
 			t.Errorf("child: got %v, want %v", gotChild, wantChild)
 		}
@@ -100,7 +100,7 @@ func TestForkLogContext(t *testing.T) {
 		// Arrange
 		const fanOut = 10
 		parent := InitLogContext(context.Background())
-		SetAttr(parent, slog.String(keyRepository, "r1"))
+		SetAttribute(parent, slog.String(keyRepository, "r1"))
 		got := make([][]slog.Attr, fanOut)
 
 		// Act
@@ -108,8 +108,8 @@ func TestForkLogContext(t *testing.T) {
 		for i := range fanOut {
 			wg.Go(func() {
 				ctx := ForkLogContext(parent)
-				SetAttr(ctx, slog.Int(keyPRNumber, i))
-				got[i] = attrsFromContext(ctx)
+				SetAttribute(ctx, slog.Int(keyPRNumber, i))
+				got[i] = attributesFromContext(ctx)
 			})
 		}
 		wg.Wait()

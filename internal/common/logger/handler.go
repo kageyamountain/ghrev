@@ -5,6 +5,13 @@ import (
 	"log/slog"
 )
 
+// Handler logContextを扱うためのslog.Handlerのラッパー。
+//
+// 制約:
+// slogはlogContextの属性をログ呼び出しの引数と同じ扱いにするため、With・WithGroupは使用しないこと。
+// WithGroup後はlogContextの属性がグループ内に入り、Withで付けた属性とlogContextの属性に同じキーがあると両方が出力されてしまう。
+// WithではなくSetAttribute、WithGroupではなくslog.Groupを使用すること。
+// この制約はforbidigoで、slogの書き方はsloglintで強制することを推奨する。
 type Handler struct {
 	innerHandler slog.Handler
 }
@@ -15,25 +22,26 @@ func NewHandler(innerHandler slog.Handler) *Handler {
 	}
 }
 
+// Handle logContextの属性をログに追加して、innerHandlerに渡す。
 func (h *Handler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
-	contextAttrs := attrsFromContext(ctx)
-	if len(contextAttrs) == 0 {
+	contextAttributes := attributesFromContext(ctx)
+	if len(contextAttributes) == 0 {
 		return h.innerHandler.Handle(ctx, r)
 	}
 
 	// ログ呼び出しの引数とlogContextに同じキーがある場合は、引数の値を優先してlogContextの属性を出力しない
-	argAttrKeys := make(map[string]struct{}, r.NumAttrs())
-	for argAttr := range r.Attrs {
-		argAttrKeys[argAttr.Key] = struct{}{}
+	argAttributeKeys := make(map[string]struct{}, r.NumAttrs())
+	for argAttribute := range r.Attrs {
+		argAttributeKeys[argAttribute.Key] = struct{}{}
 	}
 
 	r = r.Clone()
-	for _, contextAttr := range contextAttrs {
-		_, ok := argAttrKeys[contextAttr.Key]
+	for _, contextAttribute := range contextAttributes {
+		_, ok := argAttributeKeys[contextAttribute.Key]
 		if ok {
 			continue
 		}
-		r.AddAttrs(contextAttr)
+		r.AddAttrs(contextAttribute)
 	}
 
 	return h.innerHandler.Handle(ctx, r)
@@ -43,15 +51,12 @@ func (h *Handler) Enabled(ctx context.Context, level slog.Level) bool {
 	return h.innerHandler.Enabled(ctx, level)
 }
 
-func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (h *Handler) WithAttrs(attributes []slog.Attr) slog.Handler {
 	return &Handler{
-		innerHandler: h.innerHandler.WithAttrs(attrs),
+		innerHandler: h.innerHandler.WithAttrs(attributes),
 	}
 }
 
-// WithGroup 以後のログでは、logContextの属性もトップレベルではなくグループ内に出力される。
-// グループの処理はinnerHandlerに委譲しており、トップレベルに固定するにはグループを自前で保持する必要があり実装が複雑になる。
-// 属性をまとめたい場合はWithGroupではなく、ログ呼び出しの引数にslog.Groupを使うようにしてください。
 func (h *Handler) WithGroup(name string) slog.Handler {
 	return &Handler{
 		innerHandler: h.innerHandler.WithGroup(name),
