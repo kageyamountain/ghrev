@@ -39,7 +39,6 @@ func SetAttribute(ctx context.Context, attribute slog.Attr) {
 }
 
 // ForkLogContext logContextを複製した新しいcontextを返す。
-// 以降にセットする属性を、呼び出し元や並行する処理のログに出したくないときに使う。
 func ForkLogContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, logContextKey{}, &logContext{
 		attributes: attributesFromContext(ctx),

@@ -5,6 +5,13 @@ import (
 	"log/slog"
 )
 
+// Handler logContextを扱うためのslog.Handlerのラッパー。
+//
+// 制約:
+// slogはlogContextの属性をログ呼び出しの引数と同じ扱いにするため、With・WithGroupは使用しないこと。
+// WithGroup後はlogContextの属性がグループ内に入り、Withで付けた属性とlogContextの属性に同じキーがあると両方が出力されてしまう。
+// WithではなくSetAttribute、WithGroupではなくslog.Groupを使用すること。
+// この制約はforbidigoで、slogの書き方はsloglintで強制することを推奨する。
 type Handler struct {
 	innerHandler slog.Handler
 }
@@ -15,6 +22,7 @@ func NewHandler(innerHandler slog.Handler) *Handler {
 	}
 }
 
+// Handle logContextの属性をログに追加して、innerHandlerに渡す。
 func (h *Handler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
 	contextAttributes := attributesFromContext(ctx)
 	if len(contextAttributes) == 0 {
@@ -49,9 +57,6 @@ func (h *Handler) WithAttrs(attributes []slog.Attr) slog.Handler {
 	}
 }
 
-// WithGroup 以後のログでは、logContextの属性もトップレベルではなくグループ内に出力される。
-// グループの処理はinnerHandlerに委譲しており、トップレベルに固定するにはグループを自前で保持する必要があり実装が複雑になる。
-// 属性をまとめたい場合はWithGroupではなく、ログ呼び出しの引数にslog.Groupを使うようにしてください。
 func (h *Handler) WithGroup(name string) slog.Handler {
 	return &Handler{
 		innerHandler: h.innerHandler.WithGroup(name),
