@@ -9,55 +9,55 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type logContext struct {
+type logAttributes struct {
 	mutex      sync.RWMutex
 	attributes []slog.Attr
 }
 
-type logContextKey struct{}
+type logAttributesKey struct{}
 
-// InitLogContext 空のlogContextをセットしたcontextを返す。
-func InitLogContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, logContextKey{}, &logContext{})
+// InitAttributes 空のログ属性を持つcontextを返す。
+func InitAttributes(ctx context.Context) context.Context {
+	return context.WithValue(ctx, logAttributesKey{}, &logAttributes{})
 }
 
-// SetAttribute logContextに属性をセットする。同名キーは上書きする。
+// ForkAttributes ログ属性を複製した新しいcontextを返す。
+func ForkAttributes(ctx context.Context) context.Context {
+	return context.WithValue(ctx, logAttributesKey{}, &logAttributes{
+		attributes: logAttributesFromContext(ctx),
+	})
+}
+
+// SetAttribute ログ属性をセットする。同名キーは上書きする。
 func SetAttribute(ctx context.Context, attribute slog.Attr) {
-	logContext, ok := ctx.Value(logContextKey{}).(*logContext)
+	logAttributes, ok := ctx.Value(logAttributesKey{}).(*logAttributes)
 	if !ok {
 		return
 	}
 
-	logContext.mutex.Lock()
-	defer logContext.mutex.Unlock()
+	logAttributes.mutex.Lock()
+	defer logAttributes.mutex.Unlock()
 
-	for i := range logContext.attributes {
-		if logContext.attributes[i].Key == attribute.Key {
-			logContext.attributes[i] = attribute
+	for i := range logAttributes.attributes {
+		if logAttributes.attributes[i].Key == attribute.Key {
+			logAttributes.attributes[i] = attribute
 			return
 		}
 	}
-	logContext.attributes = append(logContext.attributes, attribute)
+	logAttributes.attributes = append(logAttributes.attributes, attribute)
 }
 
-// ForkLogContext logContextを複製した新しいcontextを返す。
-func ForkLogContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, logContextKey{}, &logContext{
-		attributes: logContextAttributesFromContext(ctx),
-	})
-}
-
-// logContextAttributesFromContext logContextが持つ属性のコピーを返す。
-func logContextAttributesFromContext(ctx context.Context) []slog.Attr {
-	logContext, ok := ctx.Value(logContextKey{}).(*logContext)
+// logAttributesFromContext ログ属性のコピーを返す。
+func logAttributesFromContext(ctx context.Context) []slog.Attr {
+	logAttributes, ok := ctx.Value(logAttributesKey{}).(*logAttributes)
 	if !ok {
 		return nil
 	}
 
-	logContext.mutex.RLock()
-	defer logContext.mutex.RUnlock()
+	logAttributes.mutex.RLock()
+	defer logAttributes.mutex.RUnlock()
 
-	return slices.Clone(logContext.attributes)
+	return slices.Clone(logAttributes.attributes)
 }
 
 // traceAttributesFromContext contextに有効なspanがあれば、そのtrace_idとspan_idを属性として返す。

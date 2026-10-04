@@ -6,11 +6,11 @@ import (
 	"slices"
 )
 
-// Handler logContextを扱うためのslog.Handlerのラッパー。
+// Handler ログ属性を扱うためのslog.Handlerのラッパー。
 //
 // 制約:
-// slogはlogContextの属性をログ呼び出しの引数と同じ扱いにするため、With・WithGroupは使用しないこと。
-// WithGroup後はlogContextの属性がグループ内に入り、Withで付けた属性とlogContextの属性に同じキーがあると両方が出力されてしまう。
+// slogはログ属性をログ呼び出しの引数と同じ扱いにするため、With・WithGroupは使用しないこと。
+// WithGroup後はログ属性がグループ内に入り、Withで付けた属性とログ属性に同じキーがあると両方が出力されてしまう。
 // WithではなくSetAttribute、WithGroupではなくslog.Groupを使用すること。
 // この制約はforbidigoで、slogの書き方はsloglintで強制することを推奨する。
 type Handler struct {
@@ -23,11 +23,11 @@ func NewHandler(innerHandler slog.Handler) *Handler {
 	}
 }
 
-// Handle logContextの属性とtraceの属性をログに追加して、innerHandlerに渡す。
+// Handle ログ属性とtraceの属性をログに追加して、innerHandlerに渡す。
 func (h *Handler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
-	logContextAttributes := logContextAttributesFromContext(ctx)
+	logAttributes := logAttributesFromContext(ctx)
 	traceAttributes := traceAttributesFromContext(ctx)
-	contextAttributes := slices.Concat(logContextAttributes, traceAttributes)
+	contextAttributes := slices.Concat(logAttributes, traceAttributes)
 	if len(contextAttributes) == 0 {
 		return h.innerHandler.Handle(ctx, r)
 	}

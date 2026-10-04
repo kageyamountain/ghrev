@@ -45,7 +45,7 @@ func TestHandler_Handle(t *testing.T) {
 		// Arrange
 		var buf bytes.Buffer
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil)))
-		ctx := InitLogContext(context.Background())
+		ctx := InitAttributes(context.Background())
 		SetAttribute(ctx, slog.String(keyRepository, "r1"))
 
 		// Act
@@ -64,7 +64,7 @@ func TestHandler_Handle(t *testing.T) {
 		// Arrange
 		var buf bytes.Buffer
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil)))
-		ctx := InitLogContext(context.Background())
+		ctx := InitAttributes(context.Background())
 		callee := func(ctx context.Context) {
 			SetAttribute(ctx, slog.Int(keyPRNumber, 1))
 		}
@@ -86,7 +86,7 @@ func TestHandler_Handle(t *testing.T) {
 		// Arrange
 		var buf bytes.Buffer
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil)))
-		ctx := InitLogContext(context.Background())
+		ctx := InitAttributes(context.Background())
 		SetAttribute(ctx, slog.Int(keyPRNumber, 1))
 		SetAttribute(ctx, slog.String(keyRepository, "r1"))
 		want := map[string]any{keyPRNumber: float64(2), keyRepository: "r1"}
@@ -114,7 +114,7 @@ func TestHandler_Handle(t *testing.T) {
 		// Arrange
 		var buf bytes.Buffer
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil))).With(slog.Int(keyPRNumber, 1))
-		ctx := InitLogContext(context.Background())
+		ctx := InitAttributes(context.Background())
 		SetAttribute(ctx, slog.String(keyRepository, "r1"))
 
 		// Act
@@ -153,9 +153,9 @@ func TestHandler_Handle_trace(t *testing.T) {
 			want: map[string]any{keyTraceID: traceID, keySpanID: spanID},
 		},
 		{
-			name: "正常系: logContextとspanの両方がある場合、両方の属性が出力されること",
+			name: "正常系: ログ属性とspanの両方がある場合、両方の属性が出力されること",
 			ctx: func() context.Context {
-				ctx := InitLogContext(context.Background())
+				ctx := InitAttributes(context.Background())
 				SetAttribute(ctx, slog.String(keyRepository, "r1"))
 				return trace.ContextWithSpanContext(ctx, trace.NewSpanContext(spanContextConfig))
 			}(),
