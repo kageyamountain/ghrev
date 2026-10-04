@@ -44,9 +44,9 @@ func run() int {
 	slog.SetDefault(slog.New(logHandler))
 
 	ctx = logger.InitLogContext(ctx)
-	logger.SetAttr(ctx, slog.String(logger.AttrKeyLogType, logger.LogTypeApp))
-	logger.SetAttr(ctx, slog.String("execution_id", uuid.New().String()))
-	logger.SetAttr(ctx, slog.Any("args", os.Args))
+	logger.SetAttribute(ctx, slog.String(logger.AttributeKeyLogType, logger.LogTypeApp))
+	logger.SetAttribute(ctx, slog.String("execution_id", uuid.New().String()))
+	logger.SetAttribute(ctx, slog.Any("args", os.Args))
 
 	slog.InfoContext(ctx, "process started")
 
@@ -59,7 +59,7 @@ func run() int {
 	// サブコマンド名を取得
 	subCommandName, err := subcommand.ParseName(os.Args[1])
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to parse subcommand", slog.Any(logger.AttrKeyError, err))
+		slog.ErrorContext(ctx, "failed to parse subcommand", slog.Any(logger.AttributeKeyError, err))
 		return 1
 	}
 
@@ -67,14 +67,14 @@ func run() int {
 	optionArgs := os.Args[2:]
 	useCase, err := buildUseCase(ctx, subCommandName, optionArgs)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to get use case", slog.Any(logger.AttrKeyError, err))
+		slog.ErrorContext(ctx, "failed to get use case", slog.Any(logger.AttributeKeyError, err))
 		return 1
 	}
 
 	// ユースケース実行
 	err = useCase.Do(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to do use case", slog.Any(logger.AttrKeyError, err))
+		slog.ErrorContext(ctx, "failed to do use case", slog.Any(logger.AttributeKeyError, err))
 		return 1
 	}
 

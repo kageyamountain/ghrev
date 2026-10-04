@@ -16,24 +16,24 @@ func NewHandler(innerHandler slog.Handler) *Handler {
 }
 
 func (h *Handler) Handle(ctx context.Context, r slog.Record) error { //nolint:gocritic // slogのinterface仕様なので第2引数はポインタ型にできない
-	contextAttrs := attrsFromContext(ctx)
-	if len(contextAttrs) == 0 {
+	contextAttributes := attributesFromContext(ctx)
+	if len(contextAttributes) == 0 {
 		return h.innerHandler.Handle(ctx, r)
 	}
 
 	// ログ呼び出しの引数とlogContextに同じキーがある場合は、引数の値を優先してlogContextの属性を出力しない
-	argAttrKeys := make(map[string]struct{}, r.NumAttrs())
-	for argAttr := range r.Attrs {
-		argAttrKeys[argAttr.Key] = struct{}{}
+	argAttributeKeys := make(map[string]struct{}, r.NumAttrs())
+	for argAttribute := range r.Attrs {
+		argAttributeKeys[argAttribute.Key] = struct{}{}
 	}
 
 	r = r.Clone()
-	for _, contextAttr := range contextAttrs {
-		_, ok := argAttrKeys[contextAttr.Key]
+	for _, contextAttribute := range contextAttributes {
+		_, ok := argAttributeKeys[contextAttribute.Key]
 		if ok {
 			continue
 		}
-		r.AddAttrs(contextAttr)
+		r.AddAttrs(contextAttribute)
 	}
 
 	return h.innerHandler.Handle(ctx, r)
@@ -43,9 +43,9 @@ func (h *Handler) Enabled(ctx context.Context, level slog.Level) bool {
 	return h.innerHandler.Enabled(ctx, level)
 }
 
-func (h *Handler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (h *Handler) WithAttrs(attributes []slog.Attr) slog.Handler {
 	return &Handler{
-		innerHandler: h.innerHandler.WithAttrs(attrs),
+		innerHandler: h.innerHandler.WithAttrs(attributes),
 	}
 }
 

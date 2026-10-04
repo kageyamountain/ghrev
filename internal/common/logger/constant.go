@@ -1,8 +1,8 @@
 package logger
 
 const (
-	AttrKeyLogType string = "log_type"
-	AttrKeyError   string = "error"
+	AttributeKeyLogType string = "log_type"
+	AttributeKeyError   string = "error"
 )
 
 const (

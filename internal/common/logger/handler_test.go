@@ -42,7 +42,7 @@ func TestHandler_Handle(t *testing.T) {
 		var buf bytes.Buffer
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil)))
 		ctx := InitLogContext(context.Background())
-		SetAttr(ctx, slog.String(keyRepository, "r1"))
+		SetAttribute(ctx, slog.String(keyRepository, "r1"))
 
 		// Act
 		logger.InfoContext(ctx, message)
@@ -62,7 +62,7 @@ func TestHandler_Handle(t *testing.T) {
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil)))
 		ctx := InitLogContext(context.Background())
 		callee := func(ctx context.Context) {
-			SetAttr(ctx, slog.Int(keyPRNumber, 1))
+			SetAttribute(ctx, slog.Int(keyPRNumber, 1))
 		}
 
 		// Act
@@ -83,8 +83,8 @@ func TestHandler_Handle(t *testing.T) {
 		var buf bytes.Buffer
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil)))
 		ctx := InitLogContext(context.Background())
-		SetAttr(ctx, slog.Int(keyPRNumber, 1))
-		SetAttr(ctx, slog.String(keyRepository, "r1"))
+		SetAttribute(ctx, slog.Int(keyPRNumber, 1))
+		SetAttribute(ctx, slog.String(keyRepository, "r1"))
 		want := map[string]any{keyPRNumber: float64(2), keyRepository: "r1"}
 
 		// Act
@@ -111,7 +111,7 @@ func TestHandler_Handle(t *testing.T) {
 		var buf bytes.Buffer
 		logger := slog.New(NewHandler(slog.NewJSONHandler(&buf, nil))).With(slog.Int(keyPRNumber, 1))
 		ctx := InitLogContext(context.Background())
-		SetAttr(ctx, slog.String(keyRepository, "r1"))
+		SetAttribute(ctx, slog.String(keyRepository, "r1"))
 
 		// Act
 		logger.InfoContext(ctx, message)
