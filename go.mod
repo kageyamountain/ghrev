@@ -5,7 +5,7 @@ go 1.27.1
 tool github.com/matryer/moq
 
 require (
-	github.com/cli/go-gh/v2 v2.16.1
+	github.com/cli/go-gh/v2 v2.16.2
 	github.com/google/go-github/v80 v80.0.0
 	github.com/google/uuid v1.6.0
 	go.opentelemetry.io/otel/trace v1.47.0
